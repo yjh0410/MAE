@@ -45,6 +45,10 @@ class VisionTransformer(nn.Module):
         # initialize pos_embed
         nn.init.normal_(self.pos_embed, std=.02)
 
+    @torch.jit.ignore
+    def no_weight_decay(self):
+        return {'pos_embed', 'cls_token', 'dist_token'}
+
     def forward(self, x):
         # patch embed
         x = self.patch_embed(x)

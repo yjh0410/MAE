@@ -13,6 +13,8 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 
 from data import build_dataset, build_dataloader, build_transform
 from models import build_model
+
+from utils import lr_decay
 from utils import distributed_utils
 from utils.misc import setup_seed, accuracy
 from utils.com_flops_params import FLOPs_and_Params
@@ -71,8 +73,12 @@ def parse_args():
                         help='learning rate for training model')
     parser.add_argument('--min_lr', type=float, default=1e-6,
                         help='the final lr')
+    parser.add_argument('--layer_decay', type=float, default=0.75,
+                        help='layer-wise lr decay from ELECTRA/BEiT')
     parser.add_argument('-accu', '--grad_accumulate', type=int, default=1,
                         help='gradient accumulation')
+    parser.add_argument('--max_grad_norm', type=float, default=None,
+                        help='Clip gradient norm (default: None, no clipping)')
     # DDP
     parser.add_argument('-dist', '--distributed', action='store_true', default=False,
                         help='distributed training')
@@ -92,7 +98,7 @@ def main():
     # set random seed
     setup_seed(args.seed)
 
-    path_to_save = os.path.join(args.path_to_save, args.model)
+    path_to_save = os.path.join(args.path_to_save, args.dataset, args.model)
     os.makedirs(path_to_save, exist_ok=True)
     
     # ------------------------- Build DDP environment -------------------------
@@ -161,7 +167,8 @@ def main():
     # ------------------------- Build Optimzier -------------------------
     args.base_lr = args.base_lr / 256 * args.batch_size * args.grad_accumulate  # auto scale lr
     args.min_lr = args.min_lr / 256 * args.batch_size * args.grad_accumulate    # auto scale lr
-    optimizer = optim.AdamW(model_without_ddp.parameters(), lr=args.base_lr, weight_decay=args.weight_decay)
+    param_groups = lr_decay.param_groups_lrd(model_without_ddp, args.weight_decay, model_without_ddp.no_weight_decay(), args.layer_decay)
+    optimizer = torch.optim.AdamW(param_groups, lr=args.base_lr)
 
     # ------------------------- Build Lr Scheduler -------------------------
     lf = lambda x: ((1 - math.cos(x * math.pi / args.max_epoch)) / 2) * (args.min_lr / args.base_lr - 1) + 1
@@ -169,6 +176,7 @@ def main():
 
     # ------------------------- Build Criterion -------------------------
     criterion = torch.nn.CrossEntropyLoss().to(device)
+    scaler = torch.cuda.amp.GradScaler()
 
     # ------------------------- Training Pipeline -------------------------
     t0 = time.time()
@@ -191,21 +199,27 @@ def main():
             target = target.to(device, non_blocking=True)
 
             # Inference
-            output = model(images)
-
-            # Loss
-            loss = criterion(output, target)
+            with torch.cuda.amp.autocast():
+                output = model(images)
+                loss = criterion(output, target)
 
             # Accuracy
             acc = accuracy(output, target, topk=(1, 5,))            
 
             # Backward
             loss /= args.grad_accumulate
-            loss.backward() 
+            scaler.scale(loss).backward()
 
             # Update
             if ni % args.grad_accumulate == 0:
-                optimizer.step()
+                if args.max_grad_norm:
+                    # unscale gradients
+                    scaler.unscale_(optimizer)
+                    # clip gradients
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=args.max_grad_norm)
+                # optimizer.step
+                scaler.step(optimizer)
+                scaler.update()
                 optimizer.zero_grad()
             
             # Logs
