@@ -137,6 +137,7 @@ def main():
     # ------------------------- Build Dataloader -------------------------
     train_dataloader = build_dataloader(args, train_dataset, is_train=True)
     val_dataloader = build_dataloader(args, val_dataset, is_train=False)
+    epoch_size = len(train_dataloader)
 
     print('=================== Dataset Information ===================')
     print('Train dataset size : ', len(train_dataset))
@@ -162,10 +163,6 @@ def main():
         model = DDP(model, device_ids=[args.gpu])
         model_without_ddp = model.module
 
-    # ------------------------- Train Config -------------------------
-    best_acc1 = -1.
-    epoch_size = len(train_dataloader)
-
     # ------------------------- Build Optimzier -------------------------
     args.base_lr = args.base_lr / 256 * args.batch_size * args.grad_accumulate  # auto scale lr
     args.min_lr = args.min_lr / 256 * args.batch_size * args.grad_accumulate    # auto scale lr
@@ -189,6 +186,7 @@ def main():
 
     # ------------------------- Training Pipeline -------------------------
     t0 = time.time()
+    best_acc1 = -1.
     print("=================== Start training ===================")
     for epoch in range(args.start_epoch, args.max_epoch):
         if args.distributed:

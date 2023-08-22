@@ -132,6 +132,7 @@ def main():
     # ------------------------- Build Dataloader -------------------------
     train_dataloader = build_dataloader(args, train_dataset, is_train=True)
     val_dataloader = build_dataloader(args, val_dataset, is_train=False)
+    epoch_size = len(train_dataloader)
 
     print('=================== Dataset Information ===================')
     print('Train dataset size : ', len(train_dataset))
@@ -156,10 +157,6 @@ def main():
     if args.distributed:
         model = DDP(model, device_ids=[args.gpu])
         model_without_ddp = model.module
-
-    # ------------------------- Train Config -------------------------
-    min_loss = 1e7
-    epoch_size = len(train_dataloader)
 
     # ------------------------- Build Optimzier -------------------------
     args.base_lr = args.base_lr / 256 * args.batch_size * args.grad_accumulate  # auto scale lr
@@ -243,18 +240,15 @@ def main():
 
         # Evaluate
         if distributed_utils.is_main_process():
-            if (epoch % 10) == 0 or (epoch == args.max_epoch - 1):
+            if (epoch % 20) == 0 or (epoch == args.max_epoch - 1):
                 avg_loss = total_losses / total_num_fgs
-                is_best = avg_loss < min_loss
-                min_loss = min(loss.item(), min_loss)
-                if is_best:
-                    print('saving the model ...')
-                    weight_name = '{}_epoch_{}_{:.2f}.pth'.format(args.model, epoch, min_loss)
-                    checkpoint_path = os.path.join(path_to_save, weight_name)
-                    torch.save({'model': model_without_ddp.state_dict(),
-                                'optimizer': optimizer.state_dict(),
-                                'epoch': epoch},
-                                checkpoint_path)
+                print('saving the model ...')
+                weight_name = '{}_epoch_{}_{:.2f}.pth'.format(args.model, epoch, avg_loss)
+                checkpoint_path = os.path.join(path_to_save, weight_name)
+                torch.save({'model': model_without_ddp.state_dict(),
+                            'optimizer': optimizer.state_dict(),
+                            'epoch': epoch},
+                            checkpoint_path)
                 total_num_fgs = 0.
                 total_losses = 0.
 
