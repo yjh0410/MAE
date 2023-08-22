@@ -243,7 +243,7 @@ def main():
 
         # Evaluate
         if distributed_utils.is_main_process():
-            if (epoch % args.eval_epoch) == 0 or (epoch == args.max_epoch - 1):
+            if (epoch % 10) == 0 or (epoch == args.max_epoch - 1):
                 avg_loss = total_losses / total_num_fgs
                 is_best = avg_loss < min_loss
                 min_loss = min(loss.item(), min_loss)
