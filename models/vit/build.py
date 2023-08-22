@@ -1,5 +1,5 @@
+# ------------------------ Vision Transformer ------------------------
 from .vit import vit_nano, vit_tiny, vit_base, vit_large, vit_huge
-
 
 def build_vit(args):
     # build vit model
@@ -18,5 +18,18 @@ def build_vit(args):
     if args.mae_pretrained is not None:
         ## TODO:
         pass
+
+    return model
+
+
+# ------------------------ MAE Vision Transformer ------------------------
+from .vit_mae import mae_vit_nano, mae_vit_tiny
+
+def build_mae_vit(args):
+    # build vit model
+    if args.model == 'mae_vit_nano':
+        model = mae_vit_nano(args.img_size, args.patch_size, args.img_dim, args.mask_ratio, args.norm_pix_loss)
+    elif args.model == 'mae_vit_tiny':
+        model = mae_vit_tiny(args.img_size, args.patch_size, args.img_dim, args.mask_ratio, args.norm_pix_loss)
 
     return model

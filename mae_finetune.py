@@ -48,7 +48,7 @@ def parse_args():
                         help='start epoch for finetune with MAE pretrained')
     parser.add_argument('--max_epoch', type=int, default=50, 
                         help='max epoch')
-    parser.add_argument('--eval_epoch', type=int, default=1, 
+    parser.add_argument('--eval_epoch', type=int, default=5, 
                         help='max epoch')
     # Dataset
     parser.add_argument('--dataset', type=str, default='cifar10',
