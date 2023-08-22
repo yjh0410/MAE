@@ -1,5 +1,6 @@
 # --------------- Pretrain on CIFAR ---------------
 python mae_pretrain.py \
+        --cuda \
         --dataset cifar10 \
         -m mae_vit_nano \
         --batch_size 256 \
@@ -11,6 +12,7 @@ python mae_pretrain.py \
 
 # --------------- Pretrain on ImageNet ---------------
 # python mae_pretrain.py \
+#         --cuda \
 #         --dataset imagenet_1k \
 #         -m mae_vit_nano \
 #         --batch_size 256 \

@@ -41,8 +41,20 @@ python mae_finetune.py --dataset cifar10 -m vit_nano --batch_size 256 --img_size
 python mae_finetune.py --dataset imagenet -m vit_nano --batch_size 256 --img_size 224 --patch_size 16 --mae_pretrained --max_epoch 50 --wp_epoch 5
 ```
 
-## 4. Experiments
-### 4.1 MAE pretrain
+## 4. Evaluate 
+- Evaluate the `top1 & top5` accuracy of `ViT-Nano` on CIFAR10 dataset:
+
+- Evaluate the `top1 & top5` accuracy of `ViT-Nano` on ImageNet-1K dataset:
+
+
+## 5. Visualize Image Reconstruction
+- Evaluate `MAE-ViT-Nano` on CIFAR10 dataset:
+
+- Evaluate `MAE-ViT-Nano` on ImageNet-1K dataset:
+
+
+## 6. Experiments
+### 6.1 MAE pretrain
 - Visualization on CIFAR10
 
 ...
@@ -52,17 +64,17 @@ python mae_finetune.py --dataset imagenet -m vit_nano --batch_size 256 --img_siz
 ...
 
 
-### 4.2 Finutune
+### 6.2 Finutune
 - On CIFAR10
 
-|  Model   |  MAE pretrained  | Epoch | Top 1 | Top 5 | Weight |
-|  :---:   |       :---:      | :---: | :---: | :---: | :---:  |
-| ViT-Nano |        No        | 200   |       |       |        |
-| ViT-Nano |        Yes       | 50    |       |       |        |
+|  Model   |  MAE pretrained  | Epoch | Top 1 | Weight |
+|  :---:   |       :---:      | :---: | :---: | :---:  |
+| ViT-Nano |        No        | 200   | 77.7  | [ckpt](https://github.com/yjh0410/MAE/releases/download/checkpoints/vit_nano_cifar10.pth) |
+| ViT-Nano |        Yes       | 50    |       |        |
 
 - On ImageNet-1K
 
-|  Model   |  MAE pretrained  | Epoch | Top 1 | Top 5 | Weight |
-|  :---:   |       :---:      | :---: | :---: | :---: | :---:  |
-| ViT-Nano |        No        | 200   |       |       |        |
-| ViT-Nano |        Yes       | 50    |       |       |        |
+|  Model   |  MAE pretrained  | Epoch | Top 1 | Weight |
+|  :---:   |       :---:      | :---: | :---: | :---:  |
+| ViT-Nano |        No        | 200   |       |        |
+| ViT-Nano |        Yes       | 50    |       |        |

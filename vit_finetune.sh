@@ -1,5 +1,6 @@
 # --------------- Finetune on CIFAR ---------------
 python mae_finetune.py \
+        --cuda \
         --dataset cifar10 \
         -m vit_nano \
         --batch_size 256 \
@@ -11,6 +12,7 @@ python mae_finetune.py \
 
 # --------------- Finetune on ImageNet ---------------
 # python mae_finetune.py \
+#         --cuda \
 #         --dataset imagenet_1k \
 #         -m vit_nano \
 #         --batch_size 256 \
