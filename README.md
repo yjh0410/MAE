@@ -41,7 +41,18 @@ python mae_finetune.py --dataset cifar10 -m vit_nano --batch_size 256 --img_size
 python mae_finetune.py --dataset imagenet -m vit_nano --batch_size 256 --img_size 224 --patch_size 16 --mae_pretrained
 ```
 
-## Experiments
+## 4. Experiments
+### 4.1 MAE pretrain
+- Visualization on CIFAR10
+
+...
+
+- Visualization on ImageNet
+
+...
+
+
+### 4.2 Finutune
 - On CIFAR10
 
 |  Model   |  MAE pretrained  | Epoch | Top 1 | Top 5 | Weight |
@@ -55,12 +66,3 @@ python mae_finetune.py --dataset imagenet -m vit_nano --batch_size 256 --img_siz
 |  :---:   |       :---:      | :---: | :---: | :---: | :---:  |
 | ViT-Nano |        No        | 200   |       |       |        |
 | ViT-Nano |        Yes       | 50    |       |       |        |
-
-
-- Visualization on CIFAR10
-
-...
-
-- Visualization on ImageNet
-
-...

@@ -41,6 +41,8 @@ def parse_args():
                         help='path to save trained model.')
     parser.add_argument('--tfboard', action='store_true', default=False,
                         help='use tensorboard')
+    parser.add_argument('--eval', action='store_true', default=False,
+                        help='evaluate model.')
     # Epoch
     parser.add_argument('--wp_epoch', type=int, default=5, 
                         help='warmup epoch for finetune with MAE pretrained')
@@ -177,6 +179,13 @@ def main():
     # ------------------------- Build Criterion -------------------------
     criterion = torch.nn.CrossEntropyLoss().to(device)
     scaler = torch.cuda.amp.GradScaler()
+
+    # ------------------------- Eval before Train Pipeline -------------------------
+    if args.eval:
+        print('evaluating ...')
+        loss, acc1 = validate(device, val_dataloader, model_without_ddp, criterion)
+        print('Eval Results: [loss: %.2f][acc1: %.2f]' % (loss.item(), acc1[0].item()), flush=True)
+        exit(0)
 
     # ------------------------- Training Pipeline -------------------------
     t0 = time.time()
