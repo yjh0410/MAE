@@ -201,7 +201,7 @@ def main():
                 loss = mae_loss(images, output['x_pred'], output['mask'], args.patch_size, args.norm_pix_loss)
                 # update num_fgs & losses
                 total_num_fgs += output['mask'].sum().item()
-                total_losses += loss * output['mask'].sum().item()
+                total_losses += loss.item() * output['mask'].sum().item()
 
             # Backward
             loss /= args.grad_accumulate
@@ -255,8 +255,8 @@ def main():
                                 'optimizer': optimizer.state_dict(),
                                 'epoch': epoch},
                                 checkpoint_path)
-                    total_num_fgs = 0.
-                    total_losses = 0.
+                total_num_fgs = 0.
+                total_losses = 0.
 
         lr_scheduler.step()
 
