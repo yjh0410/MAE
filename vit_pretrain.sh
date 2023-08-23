@@ -13,6 +13,7 @@ python mae_pretrain.py \
 # --------------- Pretrain on ImageNet ---------------
 # python mae_pretrain.py \
 #         --cuda \
+#         --root path/to/imagenet_1k \
 #         --dataset imagenet_1k \
 #         -m mae_vit_nano \
 #         --batch_size 256 \

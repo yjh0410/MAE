@@ -13,6 +13,7 @@ python mae_finetune.py \
 # --------------- Finetune on ImageNet ---------------
 # python mae_finetune.py \
 #         --cuda \
+#         --root path/to/imagenet_1k \
 #         --dataset imagenet_1k \
 #         -m vit_nano \
 #         --batch_size 256 \
@@ -20,4 +21,4 @@ python mae_finetune.py \
 #         --patch_size 16 \
 #         --max_epoch 50 \
 #         --wp_epoch 5 \
-#         --mae_pretrained
+#         --mae_pretrained weights/imagenet_1k/mae_vit_nano/mae_vit_nano_imagenet_1k.pth

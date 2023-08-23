@@ -1,5 +1,6 @@
 from copy import deepcopy
 import os
+import cv2
 import time
 import math
 import argparse
@@ -14,10 +15,9 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from data import build_dataset, build_dataloader, build_transform
 from models import build_model
 
-from utils import lr_decay
 from utils import distributed_utils
-from utils.misc import setup_seed, accuracy, modify_optimizer
-from utils.misc import patchify, unpatchify, mae_loss
+from utils.misc import setup_seed, modify_optimizer
+from utils.misc import unpatchify, mae_loss
 from utils.com_flops_params import FLOPs_and_Params
 
 
@@ -45,6 +45,8 @@ def parse_args():
                         help='path to save trained model.')
     parser.add_argument('--tfboard', action='store_true', default=False,
                         help='use tensorboard')
+    parser.add_argument('--eval', action='store_true', default=False,
+                        help='evaluate model.')
     # Epoch
     parser.add_argument('--wp_epoch', type=int, default=40, 
                         help='warmup epoch for finetune with MAE pretrained')
@@ -170,6 +172,12 @@ def main():
     # ------------------------- Build Grad Scaler -------------------------
     scaler = torch.cuda.amp.GradScaler()
 
+    # ------------------------- Eval before Train Pipeline -------------------------
+    if args.eval:
+        print('evaluating ...')
+        visualize(args, device, val_dataloader, model_without_ddp)
+        exit(0)
+
     # ------------------------- Training Pipeline -------------------------
     t0 = time.time()
     total_losses = 0.
@@ -245,14 +253,66 @@ def main():
                 print('saving the model ...')
                 weight_name = '{}_epoch_{}_{:.2f}.pth'.format(args.model, epoch, avg_loss)
                 checkpoint_path = os.path.join(path_to_save, weight_name)
-                torch.save({'model': model_without_ddp.state_dict(),
-                            'optimizer': optimizer.state_dict(),
-                            'epoch': epoch},
-                            checkpoint_path)
+                if epoch == args.max_epoch - 1:
+                    # For the last epoch, we do not save optimizer.
+                    torch.save({'model': model_without_ddp.state_dict()}, checkpoint_path)
+                else:
+                    torch.save({'model': model_without_ddp.state_dict(),
+                                'optimizer': optimizer.state_dict(),
+                                'epoch': epoch},
+                                checkpoint_path)
                 total_num_fgs = 0.
                 total_losses = 0.
 
         lr_scheduler.step()
+
+
+def visualize(args, device, val_loader, model):
+    save_path = "vis_results/{}/{}".format(args.dataset, args.model)
+    os.makedirs(save_path, exist_ok=True)
+
+    # switch to evaluate mode
+    model.eval()
+    patch_size = args.patch_size
+    pixel_mean = val_loader.dataset.pixel_mean
+    pixel_std  = val_loader.dataset.pixel_std
+    with torch.no_grad():
+        for i, (images, target) in enumerate(val_loader):
+            images = images.to(device, non_blocking=True)
+            target = target.to(device, non_blocking=True)
+            # inference
+            output = model(images)
+            # loss
+            loss = mae_loss(images, output['x_pred'], output['mask'], patch_size, model.norm_pix_loss)
+
+            # denormalize input image
+            org_img = images[0].permute(1, 2, 0).cpu().numpy()
+            org_img = (org_img * pixel_std + pixel_mean) * 255.
+            org_img = org_img.astype(np.uint8)
+
+            # masked image
+            mask = output['mask'].unsqueeze(-1).repeat(1, 1, patch_size**2 *3)  # [B, H*W] -> [B, H*W, p*p*3]
+            mask = unpatchify(mask, patch_size)
+            mask = mask[0].permute(1, 2, 0).cpu().numpy()
+            masked_img = org_img * (1 - mask)  # 1 is removing, 0 is keeping
+            masked_img = masked_img.astype(np.uint8)
+
+            # denormalize reconstructed image
+            pred_img = unpatchify(output['x_pred'], patch_size)
+            pred_img = pred_img[0].permute(1, 2, 0).cpu().numpy()
+            pred_img = (pred_img * pixel_std + pixel_mean) * 255.
+            pred_img = org_img * (1 - mask) + pred_img * mask
+            pred_img = pred_img.astype(np.uint8)
+
+            # visualize
+            vis_image = np.concatenate([masked_img, org_img, pred_img], axis=1)
+            vis_image = vis_image[..., (2, 1, 0)]
+            print("[{}]/[{}] | Label: {} | Loss: {:.4f} ".format(i, len(val_loader), int(target[0]), loss.item()))
+            cv2.imshow('masked | origin | reconstruct ', vis_image)
+            cv2.waitKey(0)
+
+            # save
+            cv2.imwrite('{}/{:06}.png'.format(save_path, i), vis_image)
 
 
 if __name__ == "__main__":

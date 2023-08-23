@@ -1,4 +1,5 @@
 import torch
+from .pos_embed import interpolate_pos_embed
 
 
 # ------------------------ Vision Transformer ------------------------
@@ -31,6 +32,9 @@ def build_vit(args):
         for k in list(checkpoint_state_dict.keys()):
             if 'mae_encoder' in k and k[12:] in model_state_dict.keys():
                 encoder_state_dict[k[12:]] = checkpoint_state_dict[k]
+
+        # interpolate position embedding
+        interpolate_pos_embed(model, encoder_state_dict)
 
         # load encoder weight into ViT's encoder
         model.load_state_dict(encoder_state_dict, strict=False)
