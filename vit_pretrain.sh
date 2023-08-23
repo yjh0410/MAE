@@ -2,7 +2,7 @@
 python mae_pretrain.py \
         --cuda \
         --dataset cifar10 \
-        -m mae_vit_nano \
+        -m mae_vit_tiny \
         --batch_size 256 \
         --img_size 32 \
         --patch_size 2 \

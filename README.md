@@ -86,6 +86,8 @@ Masked Image | Original Image | Reconstructed Image
 |  :---:   |       :---:      | :---: | :---:     | :---:  |    :---:     |
 | ViT-Nano |        No        | 200   | 77.7      | [ckpt](https://github.com/yjh0410/MAE/releases/download/checkpoints/vit_nano_cifar10.pth) | - |
 | ViT-Nano |        Yes       | 50    | **89.4**  | [ckpt](https://github.com/yjh0410/MAE/releases/download/checkpoints/vit_nano_cifar10_finetune.pth) | [ckpt](https://github.com/yjh0410/MAE/releases/download/checkpoints/mae_vit_nano_cifar10.pth)
+| ViT-Tiny |        No        | 200   | 80.2      | [ckpt](https://github.com/yjh0410/MAE/releases/download/checkpoints/vit_tiny_cifar10.pth) | - |
+| ViT-Tiny |        Yes       | 50    |           |  |  |
 
 - On ImageNet-1K
 
@@ -93,6 +95,8 @@ Masked Image | Original Image | Reconstructed Image
 |  :---:   |       :---:      | :---: | :---: | :---:  |    :---:     |
 | ViT-Nano |        No        | 200   |       |        | |
 | ViT-Nano |        Yes       | 50    |       |        | |
+| ViT-Tiny |        No        | 200   |       |        | |
+| ViT-Tiny |        Yes       | 50    |       |        | |
 
 
 ## 7. Acknowledgment
