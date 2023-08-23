@@ -275,6 +275,60 @@ def mae_vit_tiny(img_size=224, patch_size=16, img_dim=3, mask_ratio=0.75, norm_p
 
     return model
 
+def mae_vit_base(img_size=224, patch_size=16, img_dim=3, mask_ratio=0.75, norm_pix_loss=False):
+    model = MAE_VisionTransformer(img_size      = img_size,
+                                  patch_size    = patch_size,
+                                  img_dim       = img_dim,
+                                  en_emb_dim    = 768,
+                                  de_emb_dim    = 512,
+                                  en_num_layers = 12,
+                                  de_num_layers = 8,
+                                  en_num_heads  = 12,
+                                  de_num_heads  = 16,
+                                  qkv_bias      = True,
+                                  mlp_ratio     = 4.0,
+                                  dropout       = 0.1,
+                                  mask_ratio    = mask_ratio,
+                                  norm_pix_loss = norm_pix_loss)
+
+    return model
+
+def mae_vit_large(img_size=224, patch_size=16, img_dim=3, mask_ratio=0.75, norm_pix_loss=False):
+    model = MAE_VisionTransformer(img_size      = img_size,
+                                  patch_size    = patch_size,
+                                  img_dim       = img_dim,
+                                  en_emb_dim    = 1024,
+                                  de_emb_dim    = 512,
+                                  en_num_layers = 24,
+                                  de_num_layers = 8,
+                                  en_num_heads  = 16,
+                                  de_num_heads  = 16,
+                                  qkv_bias      = True,
+                                  mlp_ratio     = 4.0,
+                                  dropout       = 0.1,
+                                  mask_ratio    = mask_ratio,
+                                  norm_pix_loss = norm_pix_loss)
+
+    return model
+
+def mae_vit_huge(img_size=224, patch_size=16, img_dim=3, mask_ratio=0.75, norm_pix_loss=False):
+    model = MAE_VisionTransformer(img_size      = img_size,
+                                  patch_size    = patch_size,
+                                  img_dim       = img_dim,
+                                  en_emb_dim    = 1280,
+                                  de_emb_dim    = 512,
+                                  en_num_layers = 32,
+                                  de_num_layers = 8,
+                                  en_num_heads  = 16,
+                                  de_num_heads  = 16,
+                                  qkv_bias      = True,
+                                  mlp_ratio     = 4.0,
+                                  dropout       = 0.1,
+                                  mask_ratio    = mask_ratio,
+                                  norm_pix_loss = norm_pix_loss)
+
+    return model
+
 
 if __name__ == '__main__':
     import torch
