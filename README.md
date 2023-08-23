@@ -70,6 +70,7 @@ python mae_pretrain.py --dataset imagenet_1k -m mae_vit_nano --resume path/to/ma
 - Visualization on CIFAR10
 
 Masked Image | Original Image | Reconstructed Image
+
 ![image](./img_files/visualize_cifar10_mae_vit_nano.png)
 
 - Visualization on ImageNet
