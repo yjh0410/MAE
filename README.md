@@ -1,6 +1,7 @@
 # MAE
-PyTorch implementation of Masked AutoEncoder
+**PyTorch implementation of Masked AutoEncoder**
 
+Due to limited resources, I only test my randomly designed `ViT-Nano` on the `CIFAR10` dataset. It is not my goal to reproduce MAE perfectly, but my implementation is aligned with the official MAE as much as possible so that users can learn `MAE` quickly and accurately.
 
 ## 1. MAE pretrain
 - Train `MAE-ViT-Nano` on CIFAR10 dataset:
@@ -12,7 +13,7 @@ python mae_pretrain.py --dataset cifar10 -m mae_vit_nano --batch_size 256 --img_
 - Train `MAE-ViT-Nano` on ImageNet dataset:
 
 ```Shell
-python mae_finetune.py --dataset imagenet_1k -m mae_vit_nano --batch_size 256 --img_size 224 --patch_size 16 --max_epoch 400 --wp_epoch 40
+python mae_pretrain.py --dataset imagenet_1k -m mae_vit_nano --batch_size 256 --img_size 224 --patch_size 16 --max_epoch 400 --wp_epoch 40
 ```
 
 ## 2. Train from scratch
@@ -44,12 +45,12 @@ python mae_finetune.py --dataset imagenet_1k -m vit_nano --batch_size 256 --img_
 ## 4. Evaluate 
 - Evaluate the `top1 & top5` accuracy of `ViT-Nano` on CIFAR10 dataset:
 ```Shell
-python mae_finetune.py --dataset cifar10 -m vit_nano --batch_size 256 --img_size 32 --patch_size 2 --resume path/to/vit_nano_cifar10.pth
+python mae_finetune.py --dataset cifar10 -m vit_nano --batch_size 256 --img_size 32 --patch_size 2 --eval --resume path/to/vit_nano_cifar10.pth
 ```
 
 - Evaluate the `top1 & top5` accuracy of `ViT-Nano` on ImageNet-1K dataset:
 ```Shell
-python mae_finetune.py --dataset imagenet_1k -m vit_nano --batch_size 256 --img_size 224 --patch_size 16 --resume path/to/vit_nano_imagenet_1k.pth
+python mae_finetune.py --dataset imagenet_1k -m vit_nano --batch_size 256 --img_size 224 --patch_size 16 --eval --resume path/to/vit_nano_imagenet_1k.pth
 ```
 
 
@@ -84,11 +85,11 @@ Masked Image | Original Image | Reconstructed Image
 |  Model   |  MAE pretrained  | Epoch | Top 1     | Weight |  MAE weight  |
 |  :---:   |       :---:      | :---: | :---:     | :---:  |    :---:     |
 | ViT-Nano |        No        | 200   | 77.7      | [ckpt](https://github.com/yjh0410/MAE/releases/download/checkpoints/vit_nano_cifar10.pth) | - |
-| ViT-Nano |        Yes       | 50    | **89.4**  | [ckpt](https://github.com/yjh0410/MAE/releases/download/checkpoints/vit_nano_cifar10_finetune.pth) | [ckpt](https://github.com/yjh0410/MAE/releases/download/checkpoints/vit_nano_cifar10.pth)
+| ViT-Nano |        Yes       | 50    | **89.4**  | [ckpt](https://github.com/yjh0410/MAE/releases/download/checkpoints/vit_nano_cifar10_finetune.pth) | [ckpt](https://github.com/yjh0410/MAE/releases/download/checkpoints/mae_vit_nano_cifar10.pth)
 
 - On ImageNet-1K
 
-|  Model   |  MAE pretrained  | Epoch | Top 1 | Weight |
-|  :---:   |       :---:      | :---: | :---: | :---:  |
-| ViT-Nano |        No        | 200   |       |        |
-| ViT-Nano |        Yes       | 50    |       |        |
+|  Model   |  MAE pretrained  | Epoch | Top 1 | Weight |  MAE weight  |
+|  :---:   |       :---:      | :---: | :---: | :---:  |    :---:     |
+| ViT-Nano |        No        | 200   |       |        | |
+| ViT-Nano |        Yes       | 50    |       |        | |
