@@ -93,3 +93,7 @@ Masked Image | Original Image | Reconstructed Image
 |  :---:   |       :---:      | :---: | :---: | :---:  |    :---:     |
 | ViT-Nano |        No        | 200   |       |        | |
 | ViT-Nano |        Yes       | 50    |       |        | |
+
+
+## 7. Acknowledgment
+Thank you to **Kaiming He** for his inspiring work on [MAE](http://openaccess.thecvf.com/content/CVPR2022/papers/He_Masked_Autoencoders_Are_Scalable_Vision_Learners_CVPR_2022_paper.pdf). His research effectively elucidates the semantic distinctions between vision and language, offering valuable insights for subsequent vision-related studies. I would also like to express my gratitude for the official source code of [MAE](https://github.com/facebookresearch/mae). Additionally, I appreciate the efforts of [**IcarusWizard**](https://github.com/IcarusWizard) for reproducing the [MAE](https://github.com/IcarusWizard/MAE) implementation.
