@@ -8,7 +8,7 @@ python mae_finetune.py \
         --patch_size 2 \
         --max_epoch 50 \
         --wp_epoch 5 \
-        --mae_pretrained weightscifar10/mae_vit_nano/mae_vit_nano_cifar10.pth
+        --mae_pretrained weights/cifar10/mae_vit_nano/mae_vit_nano_cifar10.pth
 
 # --------------- Finetune on ImageNet ---------------
 # python mae_finetune.py \
