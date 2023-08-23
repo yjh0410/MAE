@@ -1,3 +1,6 @@
+import torch
+
+
 # ------------------------ Vision Transformer ------------------------
 from .vit import vit_nano, vit_tiny, vit_base, vit_large, vit_huge
 
@@ -17,7 +20,20 @@ def build_vit(args):
     # load pretrained
     if args.mae_pretrained is not None:
         ## TODO:
-        pass
+        print('Loading MAE pretrained from <{}> for <{}> ...'.format('mae_'+args.model, args.model))
+        checkpoint = torch.load(args.mae_pretrained, map_location='cpu')
+        # checkpoint state dict
+        checkpoint_state_dict = checkpoint.pop("model")
+        # model state dict
+        model_state_dict = model.state_dict()
+        # collect MAE-ViT's encoder weight
+        encoder_state_dict = {}
+        for k in list(checkpoint_state_dict.keys()):
+            if 'mae_encoder' in k and k[12:] in model_state_dict.keys():
+                encoder_state_dict[k[12:]] = checkpoint_state_dict[k]
+
+        # load encoder weight into ViT's encoder
+        model.load_state_dict(encoder_state_dict, strict=False)
 
     return model
 

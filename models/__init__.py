@@ -7,4 +7,5 @@ def build_model(args):
 
     elif args.model in ['mae_vit_nano', 'mae_vit_tiny', 'mae_vit_base', 'mae_vit_large', 'mae_vit_huge']:
         model = build_mae_vit(args)
-        return model
+
+    return model
