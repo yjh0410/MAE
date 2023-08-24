@@ -87,12 +87,16 @@ Masked Image | Original Image | Reconstructed Image
 | ViT-Nano |        No        | 200   | 77.7      | [ckpt](https://github.com/yjh0410/MAE/releases/download/checkpoints/vit_nano_cifar10.pth) | - |
 | ViT-Nano |        Yes       | 50    | **89.4**  | [ckpt](https://github.com/yjh0410/MAE/releases/download/checkpoints/vit_nano_cifar10_finetune.pth) | [ckpt](https://github.com/yjh0410/MAE/releases/download/checkpoints/mae_vit_nano_cifar10.pth)
 
+Since CIFAR10 is a very small scale dataset, we recommend increasing the epoch can make the model achieve better performance, especially when we use a larger model, such as `ViT-Base`. 
+
 - On ImageNet-1K
 
 |  Model   |  MAE pretrained  | Epoch | Top 1 | Weight |  MAE weight  |
 |  :---:   |       :---:      | :---: | :---: | :---:  |    :---:     |
 | ViT-Nano |        No        | 200   |       |        | |
 | ViT-Nano |        Yes       | 50    |       |        | |
+
+Since ImageNet-1K is a sufficiently large-scale dataset, we recommend using the default training hyperparameters of the code to pretrain MAE and finetune ViT from MAE pretraining weight. 
 
 
 ## 7. Acknowledgment
