@@ -1,3 +1,4 @@
+import math
 import torch
 import torch.nn as nn
 
@@ -10,16 +11,17 @@ except:
 # ------------------------ Vision Transformer ------------------------
 class VisionTransformer(nn.Module):
     def __init__(self,
-                 img_size    :int   = 224,
-                 patch_size  :int   = 16,
-                 img_dim     :int   = 3,
-                 emb_dim     :int   = 768,
-                 num_layers  :int   = 12,
-                 num_heads   :int   = 12,
-                 qkv_bias    :bool  = True,
-                 mlp_ratio   :float = 4.0,
-                 dropout     :float = 0.1,
-                 num_classes :int   = 1000):
+                 img_size    :int    = 224,
+                 patch_size  :int    = 16,
+                 img_dim     :int    = 3,
+                 emb_dim     :int    = 768,
+                 num_layers  :int    = 12,
+                 num_heads   :int    = 12,
+                 qkv_bias    :bool   = True,
+                 mlp_ratio   :float  = 4.0,
+                 dropout     :float  = 0.1,
+                 num_classes :int    = 1000,
+                 learnable_pos :bool = True):
         super().__init__()
         # -------- basic parameters --------
         self.img_size = img_size
@@ -29,6 +31,7 @@ class VisionTransformer(nn.Module):
         self.num_heads = num_heads
         self.num_classes = num_classes
         self.num_patches = (img_size // patch_size) ** 2
+        self.learnable_pos = learnable_pos
         # -------- network parameters --------
         ## vit encoder
         self.patch_embed = nn.Conv2d(img_dim, emb_dim, kernel_size=patch_size, stride=patch_size)
@@ -49,14 +52,51 @@ class VisionTransformer(nn.Module):
     def no_weight_decay(self):
         return {'pos_embed', 'cls_token', 'dist_token'}
 
+    def get_posembed(self, x, cls_token=False, temperature=10000):
+        scale = 2 * math.pi
+        embed_dim, grid_h, grid_w = x.shape[1:]
+        num_pos_feats = embed_dim // 2
+        # get grid
+        y_embed, x_embed = torch.meshgrid(
+            [torch.arange(grid_h, dtype=torch.float32, device=x.device),
+             torch.arange(grid_w, dtype=torch.float32, device=x.device)])
+        # normalize grid coords
+        y_embed = y_embed / (grid_h + 1e-6) * scale
+        x_embed = x_embed / (grid_w + 1e-6) * scale
+    
+        dim_t = torch.arange(num_pos_feats, dtype=torch.float32, device=x.device)
+        dim_t_ = torch.div(dim_t, 2, rounding_mode='floor') / num_pos_feats
+        dim_t = temperature ** (2 * dim_t_)
+
+        pos_x = torch.div(x_embed[..., None], dim_t)
+        pos_y = torch.div(y_embed[..., None], dim_t)
+        pos_x = torch.stack((pos_x[..., 0::2].sin(), pos_x[..., 1::2].cos()), dim=-1).flatten(-2)
+        pos_y = torch.stack((pos_y[..., 0::2].sin(), pos_y[..., 1::2].cos()), dim=-1).flatten(-2)
+
+        # [H, W, C] -> [N, C]
+        pos_embed = torch.cat((pos_y, pos_x), dim=-1).view(-1, embed_dim)
+        if cls_token:
+            # [1+N, C]
+            pos_embed = torch.cat([torch.zeros([1, embed_dim]), pos_embed], dim=0)
+
+        return pos_embed.unsqueeze(0)
+
     def forward(self, x):
         # patch embed
         x = self.patch_embed(x)
+
+        # get position embedding
+        if self.learnable_pos:
+            pos_embed = self.pos_embed
+        else:
+            pos_embed = self.get_posembed(x, cls_token=True)
+
+        # reshape: [B, C, H, W] -> [B, N, C]
         x = x.flatten(2).permute(0, 2, 1).contiguous()
 
         # transformer
         x = torch.cat([self.cls_token.repeat(x.size(0), 1, 1), x], dim=1)
-        x += self.pos_embed
+        x += pos_embed
         for block in self.transformer:
             x = block(x)
         x = self.norm(x)
@@ -137,7 +177,7 @@ if __name__ == '__main__':
     from ptflops import get_model_complexity_info
 
     # build model
-    model = vit_tiny(patch_size=16, mae_pretrained=True)
+    model = vit_tiny(patch_size=16)
 
     # calculate params & flops
     flops_count, params_count = get_model_complexity_info(model,(3,224,224), as_strings=True, print_per_layer_stat=False)
