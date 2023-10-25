@@ -104,7 +104,7 @@ class MAE_ViT_Encoder(nn.Module):
         x_masked = torch.gather(x, dim=1, index=ids_keep.unsqueeze(-1).repeat(1, 1, C))
 
         # generate the binary mask: 0 is keep, 1 is remove
-        mask = torch.ones([B, N])
+        mask = torch.ones([B, N], device=x.device)
         mask[:, :len_keep] = 0
 
         # unshuffle to get th binary mask
