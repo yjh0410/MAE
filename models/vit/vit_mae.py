@@ -1,3 +1,4 @@
+import math
 import torch
 import torch.nn as nn
 
@@ -43,8 +44,10 @@ class MAE_ViT_Encoder(nn.Module):
 
     def _init_weights(self):
         # initialize (and freeze) pos_embed by sin-cos embedding
-        pos_embed = get_2d_sincos_pos_embed(self.pos_embed.shape[-1], int(self.num_patches**.5), cls_token=True)
-        self.pos_embed.data.copy_(torch.from_numpy(pos_embed).float().unsqueeze(0))
+        # pos_embed = get_2d_sincos_pos_embed(self.pos_embed.shape[-1], int(self.num_patches**.5), cls_token=True)
+        # self.pos_embed.data.copy_(torch.from_numpy(pos_embed).float().unsqueeze(0))
+        pos_embed = self.get_posembed(self.pos_embed.shape[-1], int(self.num_patches**.5), cls_token=True)
+        self.pos_embed.data.copy_(pos_embed)
 
         # timm's trunc_normal_(std=.02) is effectively normal_(std=0.02) as cutoff is too big (2.)
         torch.nn.init.normal_(self.cls_token, std=.02)
@@ -60,11 +63,39 @@ class MAE_ViT_Encoder(nn.Module):
                 nn.init.constant_(m.bias, 0)
                 nn.init.constant_(m.weight, 1.0)
 
+    def get_posembed(self, embed_dim, grid_size, cls_token=False, temperature=10000):
+        scale = 2 * math.pi
+        grid_h, grid_w = grid_size, grid_size
+        num_pos_feats = embed_dim // 2
+        # get grid
+        y_embed, x_embed = torch.meshgrid([torch.arange(grid_h, dtype=torch.float32),
+                                           torch.arange(grid_w, dtype=torch.float32)])
+        # normalize grid coords
+        y_embed = y_embed / (grid_h + 1e-6) * scale
+        x_embed = x_embed / (grid_w + 1e-6) * scale
+    
+        dim_t = torch.arange(num_pos_feats, dtype=torch.float32)
+        dim_t_ = torch.div(dim_t, 2, rounding_mode='floor') / num_pos_feats
+        dim_t = temperature ** (2 * dim_t_)
+
+        pos_x = torch.div(x_embed[..., None], dim_t)
+        pos_y = torch.div(y_embed[..., None], dim_t)
+        pos_x = torch.stack((pos_x[..., 0::2].sin(), pos_x[..., 1::2].cos()), dim=-1).flatten(-2)
+        pos_y = torch.stack((pos_y[..., 0::2].sin(), pos_y[..., 1::2].cos()), dim=-1).flatten(-2)
+
+        # [H, W, C] -> [N, C]
+        pos_embed = torch.cat((pos_y, pos_x), dim=-1).view(-1, embed_dim)
+        if cls_token:
+            # [1+N, C]
+            pos_embed = torch.cat([torch.zeros([1, embed_dim]), pos_embed], dim=0)
+
+        return pos_embed.unsqueeze(0)
+
     def random_masking(self, x):
         B, N, C = x.shape
         len_keep = int(N * (1 - self.mask_ratio))
 
-        noise = torch.rand(B, N, device=x.device)  # noise in [0, 1]
+        noise = torch.rand(B, N)  # noise in [0, 1]
 
         # sort noise for each sample
         ids_shuffle = torch.argsort(noise, dim=1)        # ascend: small is keep, large is remove
@@ -75,7 +106,7 @@ class MAE_ViT_Encoder(nn.Module):
         x_masked = torch.gather(x, dim=1, index=ids_keep.unsqueeze(-1).repeat(1, 1, C))
 
         # generate the binary mask: 0 is keep, 1 is remove
-        mask = torch.ones([B, N], device=x.device)
+        mask = torch.ones([B, N])
         mask[:, :len_keep] = 0
 
         # unshuffle to get th binary mask
@@ -142,8 +173,10 @@ class MAE_ViT_Decoder(nn.Module):
 
     def _init_weights(self):
         # initialize (and freeze) pos_embed by sin-cos embedding
-        decoder_pos_embed = get_2d_sincos_pos_embed(self.decoder_pos_embed.shape[-1], int(self.num_patches**.5), cls_token=True)
-        self.decoder_pos_embed.data.copy_(torch.from_numpy(decoder_pos_embed).float().unsqueeze(0))
+        # decoder_pos_embed = get_2d_sincos_pos_embed(self.decoder_pos_embed.shape[-1], int(self.num_patches**.5), cls_token=True)
+        # self.decoder_pos_embed.data.copy_(torch.from_numpy(decoder_pos_embed).float().unsqueeze(0))
+        decoder_pos_embed = self.get_posembed(self.decoder_pos_embed.shape[-1], int(self.num_patches**.5), cls_token=True)
+        self.decoder_pos_embed.data.copy_(decoder_pos_embed)
 
         # timm's trunc_normal_(std=.02) is effectively normal_(std=0.02) as cutoff is too big (2.)
         torch.nn.init.normal_(self.mask_token, std=.02)
@@ -158,6 +191,34 @@ class MAE_ViT_Decoder(nn.Module):
             elif isinstance(m, nn.LayerNorm):
                 nn.init.constant_(m.bias, 0)
                 nn.init.constant_(m.weight, 1.0)
+
+    def get_posembed(self, embed_dim, grid_size, cls_token=False, temperature=10000):
+        scale = 2 * math.pi
+        grid_h, grid_w = grid_size, grid_size
+        num_pos_feats = embed_dim // 2
+        # get grid
+        y_embed, x_embed = torch.meshgrid([torch.arange(grid_h, dtype=torch.float32),
+                                           torch.arange(grid_w, dtype=torch.float32)])
+        # normalize grid coords
+        y_embed = y_embed / (grid_h + 1e-6) * scale
+        x_embed = x_embed / (grid_w + 1e-6) * scale
+    
+        dim_t = torch.arange(num_pos_feats, dtype=torch.float32)
+        dim_t_ = torch.div(dim_t, 2, rounding_mode='floor') / num_pos_feats
+        dim_t = temperature ** (2 * dim_t_)
+
+        pos_x = torch.div(x_embed[..., None], dim_t)
+        pos_y = torch.div(y_embed[..., None], dim_t)
+        pos_x = torch.stack((pos_x[..., 0::2].sin(), pos_x[..., 1::2].cos()), dim=-1).flatten(-2)
+        pos_y = torch.stack((pos_y[..., 0::2].sin(), pos_y[..., 1::2].cos()), dim=-1).flatten(-2)
+
+        # [H, W, C] -> [N, C]
+        pos_embed = torch.cat((pos_y, pos_x), dim=-1).view(-1, embed_dim)
+        if cls_token:
+            # [1+N, C]
+            pos_embed = torch.cat([torch.zeros([1, embed_dim]), pos_embed], dim=0)
+
+        return pos_embed.unsqueeze(0)
 
     def forward(self, x, ids_restore):
         # embed tokens
