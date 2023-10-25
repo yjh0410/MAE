@@ -66,6 +66,8 @@ def parse_args():
                         help='keep training')
     parser.add_argument('--ema', action='store_true', default=False,
                         help='use ema.')
+    parser.add_argument('--learnable_pos', action='store_true', default=False,
+                        help='learnable position embedding.')
     # Optimizer
     parser.add_argument('-opt', '--optimizer', type=str, default='adamw',
                         help='sgd, adam')

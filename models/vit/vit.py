@@ -37,7 +37,7 @@ class VisionTransformer(nn.Module):
         self.patch_embed = nn.Conv2d(img_dim, emb_dim, kernel_size=patch_size, stride=patch_size)
         self.transformer = nn.ModuleList([ViTBlock(emb_dim, qkv_bias, num_heads, mlp_ratio, dropout) for _ in range(num_layers)])
         self.norm        = nn.LayerNorm(emb_dim)
-        self.pos_embed   = nn.Parameter(torch.zeros(1, self.num_patches + 1, emb_dim))
+        self.pos_embed   = nn.Parameter(torch.zeros(1, self.num_patches + 1, emb_dim)) if learnable_pos else None
         self.cls_token   = nn.Parameter(torch.zeros(1, 1, emb_dim))
         ## classifier
         self.classifier  = nn.Linear(emb_dim, num_classes)
@@ -46,7 +46,8 @@ class VisionTransformer(nn.Module):
         # initialize cls_token
         nn.init.normal_(self.cls_token, std=1e-6)
         # initialize pos_embed
-        nn.init.normal_(self.pos_embed, std=.02)
+        if self.learnable_pos:
+            nn.init.normal_(self.pos_embed, std=.02)
 
     @torch.jit.ignore
     def no_weight_decay(self):

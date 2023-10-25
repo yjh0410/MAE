@@ -4,10 +4,8 @@ import torch.nn as nn
 
 try:
     from vit_modules import ViTBlock
-    from pos_embed import *
 except:
     from .vit_modules import ViTBlock
-    from .pos_embed import *
 
 # ------------------------ Basic Modules ------------------------
 ## Masked ViT Encoder
@@ -95,7 +93,7 @@ class MAE_ViT_Encoder(nn.Module):
         B, N, C = x.shape
         len_keep = int(N * (1 - self.mask_ratio))
 
-        noise = torch.rand(B, N)  # noise in [0, 1]
+        noise = torch.rand(B, N, device=x.device)  # noise in [0, 1]
 
         # sort noise for each sample
         ids_shuffle = torch.argsort(noise, dim=1)        # ascend: small is keep, large is remove
