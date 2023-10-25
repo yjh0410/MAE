@@ -52,6 +52,8 @@ def parse_args():
                         help='warmup epoch for finetune with MAE pretrained')
     parser.add_argument('--start_epoch', type=int, default=0, 
                         help='start epoch for finetune with MAE pretrained')
+    parser.add_argument('--eval_epoch', type=int, default=20, 
+                        help='warmup epoch for finetune with MAE pretrained')
     parser.add_argument('--max_epoch', type=int, default=400, 
                         help='max epoch')
     # Dataset
@@ -248,7 +250,7 @@ def main():
 
         # Evaluate
         if distributed_utils.is_main_process():
-            if (epoch % 20) == 0 or (epoch == args.max_epoch - 1):
+            if (epoch % args.eval_epoch) == 0 or (epoch == args.max_epoch - 1):
                 avg_loss = total_losses / total_num_fgs
                 print('saving the model ...')
                 weight_name = '{}_epoch_{}_{:.2f}.pth'.format(args.model, epoch, avg_loss)

@@ -7,7 +7,8 @@ python mae_pretrain.py \
         --img_size 32 \
         --patch_size 2 \
         --max_epoch 400 \
-        --wp_epoch 40
+        --wp_epoch 40 \
+        --eval_epoch 20 \
 
 
 # --------------- Pretrain on ImageNet ---------------
