@@ -90,6 +90,7 @@ class VisionTransformer(nn.Module):
         if self.learnable_pos:
             pos_embed = self.pos_embed
         else:
+            print('papa')
             pos_embed = self.get_posembed(x, cls_token=True)
 
         # reshape: [B, C, H, W] -> [B, N, C]

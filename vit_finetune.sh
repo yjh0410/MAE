@@ -3,7 +3,6 @@ python mae_finetune.py \
         --cuda \
         --dataset cifar10 \
         -m vit_tiny \
-        --learnable_pos \
         --batch_size 256 \
         --img_size 32 \
         --patch_size 2 \
