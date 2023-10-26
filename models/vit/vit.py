@@ -78,7 +78,7 @@ class VisionTransformer(nn.Module):
         pos_embed = torch.cat((pos_y, pos_x), dim=-1).view(-1, embed_dim)
         if cls_token:
             # [1+N, C]
-            pos_embed = torch.cat([torch.zeros([1, embed_dim]), pos_embed], dim=0)
+            pos_embed = torch.cat([torch.zeros([1, embed_dim], device=pos_embed.device), pos_embed], dim=0)
 
         return pos_embed.unsqueeze(0)
 
