@@ -2,3 +2,4 @@ torch
 torchvision
 opencv-python
 thop
+timm

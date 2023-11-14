@@ -9,6 +9,10 @@ python mae_finetune.py \
         --patch_size 2 \
         --max_epoch 200 \
         --wp_epoch 20 \
+        --base_lr 1e-3 \
+        --min_lr 1e-6 \
+        --layer_decay 0.75 \
+        --weight_decay 0.05 \
 
 # --------------- Finetune on ImageNet ---------------
 # python mae_finetune.py \

@@ -1,5 +1,6 @@
 import numpy as np
 import torch.utils.data as data
+import torchvision.transforms as T
 from torchvision.datasets import CIFAR10
 
 
@@ -9,13 +10,14 @@ class CifarDataset(data.Dataset):
         # ----------------- basic parameters -----------------
         self.pixel_mean = [0.5, 0.5, 0.5]
         self.pixel_std =  [0.5, 0.5, 0.5]
+        self.is_train  = is_train
         self.image_set = 'train' if is_train else 'val'
         # ----------------- dataset & transforms -----------------
-        self.transform = transform
+        self.transform = transform if transform is not None else self.build_transform()
         if is_train:
-            self.dataset = CIFAR10('data/cifar', train=True, download=True, transform=self.transform)
+            self.dataset = CIFAR10('cifar_data/', train=True, download=True, transform=self.transform)
         else:
-            self.dataset = CIFAR10('data/cifar', train=False, download=True, transform=self.transform)
+            self.dataset = CIFAR10('cifar_data/', train=False, download=True, transform=self.transform)
 
     def __len__(self):
         return len(self.dataset)
@@ -37,6 +39,13 @@ class CifarDataset(data.Dataset):
 
         return image, target
 
+    def build_transform(self):
+        if self.is_train:
+            transforms = T.Compose([T.ToTensor(), T.Normalize(0.5, 0.5)])
+        else:
+            transforms = T.Compose([T.ToTensor(), T.Normalize(0.5, 0.5)])
+
+        return transforms
 
 if __name__ == "__main__":
     import cv2
@@ -52,11 +61,8 @@ if __name__ == "__main__":
                         help='input image size.')
     args = parser.parse_args()
 
-    # transform
-    transform = build_cifar_transform(args, is_train=True)
-
     # dataset
-    dataset = CifarDataset(is_train=True, transform=transform)  
+    dataset = CifarDataset(is_train=True)  
     print('Dataset size: ', len(dataset))
 
     for i in range(1000):
@@ -65,5 +71,5 @@ if __name__ == "__main__":
         image = image[..., (2, 1, 0)]
         print(image.shape)
 
-        cv2.imshow('image', image)
-        cv2.waitKey(0)
+        # cv2.imshow('image', image)
+        # cv2.waitKey(0)

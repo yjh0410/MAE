@@ -8,3 +8,4 @@ weights
 __pycache__
 data/cifar/
 vis_results/
+cifar_data/

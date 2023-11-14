@@ -42,8 +42,6 @@ class MAE_ViT_Encoder(nn.Module):
 
     def _init_weights(self):
         # initialize (and freeze) pos_embed by sin-cos embedding
-        # pos_embed = get_2d_sincos_pos_embed(self.pos_embed.shape[-1], int(self.num_patches**.5), cls_token=True)
-        # self.pos_embed.data.copy_(torch.from_numpy(pos_embed).float().unsqueeze(0))
         pos_embed = self.get_posembed(self.pos_embed.shape[-1], int(self.num_patches**.5), cls_token=True)
         self.pos_embed.data.copy_(pos_embed)
 
@@ -171,8 +169,6 @@ class MAE_ViT_Decoder(nn.Module):
 
     def _init_weights(self):
         # initialize (and freeze) pos_embed by sin-cos embedding
-        # decoder_pos_embed = get_2d_sincos_pos_embed(self.decoder_pos_embed.shape[-1], int(self.num_patches**.5), cls_token=True)
-        # self.decoder_pos_embed.data.copy_(torch.from_numpy(decoder_pos_embed).float().unsqueeze(0))
         decoder_pos_embed = self.get_posembed(self.decoder_pos_embed.shape[-1], int(self.num_patches**.5), cls_token=True)
         self.decoder_pos_embed.data.copy_(decoder_pos_embed)
 

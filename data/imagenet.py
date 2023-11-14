@@ -1,19 +1,24 @@
 import os
+import PIL
 import numpy as np
+from timm.data import create_transform
 import torch.utils.data as data
+import torchvision.transforms as T
 from torchvision.datasets import ImageFolder
 
 
 class ImageNet1KDataset(data.Dataset):
-    def __init__(self, root, is_train=False, transform=None):
+    def __init__(self, args, is_train=False, transform=None):
         super().__init__()
         # ----------------- basic parameters -----------------
+        self.args = args
         self.pixel_mean = [0.485, 0.456, 0.406]
         self.pixel_std = [0.229, 0.224, 0.225]
+        self.is_train  = is_train
         self.image_set = 'train' if is_train else 'val'
-        self.data_path = os.path.join(root, self.image_set)
+        self.data_path = os.path.join(args.root, self.image_set)
         # ----------------- dataset & transforms -----------------
-        self.transform = transform
+        self.transform = transform if transform is not None else self.build_transform(args)
         self.dataset = ImageFolder(root=self.data_path, transform=self.transform)
 
     def __len__(self):
@@ -36,6 +41,36 @@ class ImageNet1KDataset(data.Dataset):
 
         return image, target
 
+    def build_transform(self, args):
+        if self.is_train:
+            transforms = create_transform(input_size    = args.input_size,
+                                          is_training   = True,
+                                          color_jitter  = args.color_jitter,
+                                          auto_augment  = args.aa,
+                                          interpolation = 'bicubic',
+                                          re_prob       = args.reprob,
+                                          re_mode       = args.remode,
+                                          re_count      = args.recount,
+                                          mean          = self.mean,
+                                          std           = self.std,
+                                          )
+        else:
+            t = []
+            if args.input_size <= 224:
+                crop_pct = 224 / 256
+            else:
+                crop_pct = 1.0
+            size = int(args.input_size / crop_pct)
+            t.append(
+                T.Resize(size, interpolation=PIL.Image.BICUBIC),  # to maintain same ratio w.r.t. 224 images
+            )
+            t.append(T.CenterCrop(args.input_size))
+            t.append(T.ToTensor())
+            t.append(t.Normalize(self.mean, self.std))
+            transforms = T.Compose(t)
+
+        return transforms
+
 
 if __name__ == "__main__":
     import cv2
@@ -51,11 +86,8 @@ if __name__ == "__main__":
                         help='input image size.')
     args = parser.parse_args()
 
-    # transform
-    transform = build_imagenet_transform(args, is_train=True)
-
     # dataset
-    dataset = ImageNet1KDataset(root=args.root, is_train=True, transform=transform)  
+    dataset = ImageNet1KDataset(args, is_train=True)  
     print('Dataset size: ', len(dataset))
 
     for i in range(1000):

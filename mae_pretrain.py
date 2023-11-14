@@ -6,19 +6,34 @@ import math
 import argparse
 import numpy as np
 
+# ---------------- Timm compoments ----------------
+import timm
+import timm.optim.optim_factory as optim_factory
+
+# ---------------- Torch compoments ----------------
 import torch
 import torch.optim as optim
 import torch.backends.cudnn as cudnn
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 
-from data import build_dataset, build_dataloader, build_transform
+# ---------------- Torchvision compoments ----------------
+import torchvision.transforms as transforms
+
+# ---------------- Dataset compoments ----------------
+from data import build_dataset, build_dataloader
 from models import build_model
 
+# ---------------- Utils compoments ----------------
 from utils import distributed_utils
 from utils.misc import setup_seed, modify_optimizer
-from utils.misc import unpatchify, mae_loss
+from utils.misc import load_model, save_model
+from utils.misc import unpatchify, mae_loss, print_rank_0
+from utils.misc import NativeScalerWithGradNormCount as NativeScaler
 from utils.com_flops_params import FLOPs_and_Params
+
+# ---------------- Training engine ----------------
+from engine_pretrain import train_one_epoch
 
 
 def parse_args():
@@ -95,7 +110,6 @@ def parse_args():
     
 def main():
     args = parse_args()
-    print(args)
     # set random seed
     setup_seed(args.seed)
 
@@ -103,50 +117,57 @@ def main():
     os.makedirs(path_to_save, exist_ok=True)
     
     # ------------------------- Build DDP environment -------------------------
+    local_rank = local_process_rank = -1
     print('World size: {}'.format(distributed_utils.get_world_size()))
     if args.distributed:
         distributed_utils.init_distributed_mode(args)
         print("git:\n  {}\n".format(distributed_utils.get_sha()))
+        try:
+            # Multiple Mechine & Multiple GPUs (world size > 8)
+            local_rank = torch.distributed.get_rank()
+            local_process_rank = int(os.getenv('LOCAL_PROCESS_RANK', '0'))
+        except:
+            # Single Mechine & Multiple GPUs (world size <= 8)
+            local_rank = local_process_rank = torch.distributed.get_rank()
 
+    print_rank_0(args, local_rank)
     # ------------------------- Build CUDA -------------------------
     if args.cuda:
-        print("use cuda")
         cudnn.benchmark = True
         device = torch.device("cuda")
     else:
         device = torch.device("cpu")
 
     # ------------------------- Build Tensorboard -------------------------
-    if args.tfboard:
+    if local_rank <= 0 and args.tfboard:
         print('use tensorboard')
         from torch.utils.tensorboard import SummaryWriter
-        c_time = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
-        log_path = os.path.join('log/', args.dataset, c_time)
+        time_stamp = time.strftime('%Y-%m-%d_%H:%M:%S',time.localtime(time.time()))
+        log_path = os.path.join('log/', args.dataset, time_stamp)
         os.makedirs(log_path, exist_ok=True)
         tblogger = SummaryWriter(log_path)
 
     # ------------------------- Build Transforms -------------------------
-    train_transform = build_transform(args, is_train=True)
-    val_transform = build_transform(args, is_train=False)
-
+    train_transform = transforms.Compose([
+            transforms.RandomResizedCrop(args.img_size, scale=(0.2, 1.0), interpolation=3),  # 3 is bicubic
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
+    
     # ------------------------- Build Dataset -------------------------
-    train_dataset = build_dataset(args, train_transform, is_train=True)
-    val_dataset = build_dataset(args, val_transform, is_train=False)
+    train_dataset = build_dataset(args, transform=train_transform, is_train=True)
 
     # ------------------------- Build Dataloader -------------------------
     train_dataloader = build_dataloader(args, train_dataset, is_train=True)
-    val_dataloader = build_dataloader(args, val_dataset, is_train=False)
     epoch_size = len(train_dataloader)
 
-    print('=================== Dataset Information ===================')
-    print('Train dataset size : ', len(train_dataset))
-    print('Val dataset size   : ', len(val_dataset))
+    print_rank_0('=================== Dataset Information ===================', local_rank)
+    print_rank_0('Train dataset size : {}'.format(len(train_dataset)), local_rank)
 
     # ------------------------- Build Model -------------------------
     model = build_model(args)
     model.train().to(device)
-    print(model)
-    if distributed_utils.is_main_process:
+    if local_rank <= 0:
         model_copy = deepcopy(model)
         model_copy.eval()
         FLOPs_and_Params(model=model_copy, size=args.img_size)
@@ -159,117 +180,59 @@ def main():
     # ------------------------- Build DDP Model -------------------------
     model_without_ddp = model
     if args.distributed:
-        model = DDP(model, device_ids=[args.gpu])
+        model = DDP(model, device_ids=[args.gpu], find_unused_parameters=True)
         model_without_ddp = model.module
 
     # ------------------------- Build Optimzier -------------------------
+    ## learning rate
     args.base_lr = args.base_lr / 256 * args.batch_size * args.grad_accumulate  # auto scale lr
-    args.min_lr = args.min_lr / 256 * args.batch_size * args.grad_accumulate    # auto scale lr
+    args.min_lr  = args.min_lr  / 256 * args.batch_size * args.grad_accumulate    # auto scale lr
+    ## modified optimizer
     optimizer = modify_optimizer(model_without_ddp, args.base_lr, args.weight_decay)
+
+    # ------------------------- Build Loss scaler -------------------------
+    loss_scaler = NativeScaler()
+    load_model(args=args, model_without_ddp=model_without_ddp, optimizer=optimizer, loss_scaler=loss_scaler)
 
     # ------------------------- Build Lr Scheduler -------------------------
     lf = lambda x: ((1 - math.cos(x * math.pi / args.max_epoch)) / 2) * (args.min_lr / args.base_lr - 1) + 1
     lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
 
-    # ------------------------- Build Grad Scaler -------------------------
-    scaler = torch.cuda.amp.GradScaler()
-
     # ------------------------- Eval before Train Pipeline -------------------------
     if args.eval:
-        print('evaluating ...')
-        visualize(args, device, val_dataloader, model_without_ddp)
+        print('visualizing ...')
+        visualize(args, device, model_without_ddp)
         exit(0)
 
     # ------------------------- Training Pipeline -------------------------
-    t0 = time.time()
-    total_losses = 0.
-    total_num_fgs = 0.
-    print("=================== Start training ===================")
+    start_time = time.time()
+    print_rank_0("=============== Start training for {} epochs ===============".format(args.max_epoch), local_rank)
     for epoch in range(args.start_epoch, args.max_epoch):
+        # Train one epoch
         if args.distributed:
             train_dataloader.batch_sampler.sampler.set_epoch(epoch)
+        train_stats = train_one_epoch(args, device, model, train_dataloader, optimizer, epoch, lf, loss_scaler, local_rank)
 
-        # train one epoch
-        for iter_i, (images, _) in enumerate(train_dataloader):
-            ni = iter_i + epoch * epoch_size
-            nw = args.wp_epoch * epoch_size
-            # Warmup
-            if ni <= nw:
-                xi = [0, nw]  # x interp
-                for x in optimizer.param_groups:
-                    x['lr'] = np.interp(ni, xi, [0.0, x['initial_lr'] * lf(epoch)])
-
-            images = images.to(device, non_blocking=True)
-
-            # Inference
-            with torch.cuda.amp.autocast():
-                # forward & compute loss
-                output = model(images)
-                loss = mae_loss(images, output['x_pred'], output['mask'], args.patch_size, args.norm_pix_loss)
-                # update num_fgs & losses
-                total_num_fgs += output['mask'].sum().item()
-                total_losses += loss.item() * output['mask'].sum().item()
-
-            # Backward
-            loss /= args.grad_accumulate
-            scaler.scale(loss).backward()
-
-            # Update
-            if ni % args.grad_accumulate == 0:
-                if args.max_grad_norm:
-                    # unscale gradients
-                    scaler.unscale_(optimizer)
-                    # clip gradients
-                    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=args.max_grad_norm)
-                # optimizer.step
-                scaler.step(optimizer)
-                scaler.update()
-                optimizer.zero_grad()
-            
-            # Logs
-            if distributed_utils.is_main_process() and iter_i % 10 == 0:
-                if args.tfboard:
-                    # viz loss
-                    tblogger.add_scalar('loss',  loss.item() * args.grad_accumulate,  ni)
-                
-                t1 = time.time()
-                cur_lr = [param_group['lr']  for param_group in optimizer.param_groups]
-                # basic infor
-                log =  '[Epoch: {}/{}]'.format(epoch + 1, args.max_epoch)
-                log += '[Iter: {}/{}]'.format(iter_i, epoch_size)
-                log += '[lr: {:.6f}]'.format(cur_lr[0])
-                # loss infor
-                log += '[loss: {:.6f}]'.format(loss.item() * args.grad_accumulate)
-                # other infor
-                log += '[time: {:.2f}]'.format(t1 - t0)
-
-                # print log infor
-                print(log, flush=True)
-                
-                t0 = time.time()
-
-        # Evaluate
-        if distributed_utils.is_main_process():
-            if (epoch % args.eval_epoch) == 0 or (epoch == args.max_epoch - 1):
-                avg_loss = total_losses / total_num_fgs
-                print('saving the model ...')
-                weight_name = '{}_epoch_{}_{:.2f}.pth'.format(args.model, epoch, avg_loss)
-                checkpoint_path = os.path.join(path_to_save, weight_name)
-                if epoch == args.max_epoch - 1:
-                    # For the last epoch, we do not save optimizer.
-                    torch.save({'model': model_without_ddp.state_dict()}, checkpoint_path)
-                else:
-                    torch.save({'model': model_without_ddp.state_dict(),
-                                'optimizer': optimizer.state_dict(),
-                                'epoch': epoch},
-                                checkpoint_path)
-                total_num_fgs = 0.
-                total_losses = 0.
-
+        # LR scheduler
         lr_scheduler.step()
 
+        # Evaluate
+        if local_rank <= 0 and (epoch % args.eval_epoch == 0 or epoch + 1 == args.epochs):
+            print('- saving the model after {} epochs ...'.format(epoch))
+            save_model(args=args, model=model, model_without_ddp=model_without_ddp,
+                       optimizer=optimizer, loss_scaler=loss_scaler, epoch=epoch)
 
-def visualize(args, device, val_loader, model):
+    total_time = time.time() - start_time
+    total_time_str = str(datetime.timedelta(seconds=int(total_time)))
+    print_rank_0('Training time {}'.format(total_time_str), local_rank)
+
+
+def visualize(args, device, model):
+    # test dataset
+    val_dataset = build_dataset(args, is_train=False)
+    val_dataloader = build_dataloader(args, val_dataset, is_train=False)
+
+    # save path
     save_path = "vis_results/{}/{}".format(args.dataset, args.model)
     os.makedirs(save_path, exist_ok=True)
 
