@@ -258,6 +258,7 @@ def main():
 
     # ------------------------- Training Pipeline -------------------------
     start_time = time.time()
+    max_accuracy = -1.0
     print_rank_0("=============== Start training for {} epochs ===============".format(args.max_epoch), local_rank)
     for epoch in range(args.start_epoch, args.max_epoch):
         # train one epoch
