@@ -145,7 +145,7 @@ def main():
 
     # ------------------------- Build Transforms -------------------------
     train_transform = None
-    if 'cifar' not in args.datase:
+    if 'cifar' not in args.dataset:
         train_transform = transforms.Compose([
                 transforms.RandomResizedCrop(args.img_size, scale=(0.2, 1.0), interpolation=3),  # 3 is bicubic
                 transforms.RandomHorizontalFlip(),
