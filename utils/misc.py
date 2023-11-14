@@ -354,11 +354,14 @@ def load_model(args, model_without_ddp, optimizer, loss_scaler):
                 loss_scaler.load_state_dict(checkpoint['scaler'])
             print("With optim & sched!")
 
-def save_model(args, epoch, model, model_without_ddp, optimizer, loss_scaler, acc1):
+def save_model(args, epoch, model, model_without_ddp, optimizer, loss_scaler, acc1=None):
     output_dir = Path(args.output_dir)
     epoch_name = str(epoch)
     if loss_scaler is not None:
-        checkpoint_paths = [output_dir / ('checkpoint-{}-Acc1-{:.2f}.pth'.format(epoch_name, acc1))]
+        if acc1 is not None:
+            checkpoint_paths = [output_dir / ('checkpoint-{}-Acc1-{:.2f}.pth'.format(epoch_name, acc1))]
+        else:
+            checkpoint_paths = [output_dir / ('checkpoint-{}.pth'.format(epoch_name))]
         for checkpoint_path in checkpoint_paths:
             to_save = {
                 'model': model_without_ddp.state_dict(),
