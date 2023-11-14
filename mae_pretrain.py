@@ -148,11 +148,13 @@ def main():
         tblogger = SummaryWriter(log_path)
 
     # ------------------------- Build Transforms -------------------------
-    train_transform = transforms.Compose([
-            transforms.RandomResizedCrop(args.img_size, scale=(0.2, 1.0), interpolation=3),  # 3 is bicubic
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
+    train_transform = None
+    if 'cifar' not in args.datase:
+        train_transform = transforms.Compose([
+                transforms.RandomResizedCrop(args.img_size, scale=(0.2, 1.0), interpolation=3),  # 3 is bicubic
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
     
     # ------------------------- Build Dataset -------------------------
     train_dataset = build_dataset(args, transform=train_transform, is_train=True)
