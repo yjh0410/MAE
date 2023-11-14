@@ -264,7 +264,7 @@ def main():
         if args.distributed:
             train_dataloader.batch_sampler.sampler.set_epoch(epoch)
         train_stats = train_one_epoch(args, device, model, train_dataloader, optimizer, epoch,
-                                      lf, loss_scaler, criterion, local_rank, tblogger)
+                                      lf, loss_scaler, criterion, mixup_fn, local_rank, tblogger)
 
         # LR scheduler
         lr_scheduler.step()

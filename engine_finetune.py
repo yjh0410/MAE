@@ -17,7 +17,8 @@ def train_one_epoch(args,
                     lf,
                     loss_scaler,
                     criterion,
-                    local_rank,
+                    mixup_fn=None,
+                    local_rank=0,
                     tblogger=None):
     model.train(True)
     metric_logger = MetricLogger(delimiter="  ")
@@ -40,6 +41,10 @@ def train_one_epoch(args,
 
         images = images.to(device, non_blocking=True)
         target = target.to(device, non_blocking=True)
+
+        # Mixup
+        if mixup_fn is not None:
+            samples, targets = mixup_fn(samples, targets)
 
         # Inference
         with torch.cuda.amp.autocast():
