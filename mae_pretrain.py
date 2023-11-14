@@ -109,8 +109,10 @@ def main():
     # set random seed
     setup_seed(args.seed)
 
+    # Path to save model
     path_to_save = os.path.join(args.path_to_save, args.dataset, args.model)
     os.makedirs(path_to_save, exist_ok=True)
+    args.output_dir = path_to_save
     
     # ------------------------- Build DDP environment -------------------------
     local_rank = local_process_rank = -1
@@ -158,7 +160,6 @@ def main():
 
     # ------------------------- Build Dataloader -------------------------
     train_dataloader = build_dataloader(args, train_dataset, is_train=True)
-    epoch_size = len(train_dataloader)
 
     print_rank_0('=================== Dataset Information ===================', local_rank)
     print_rank_0('Train dataset size : {}'.format(len(train_dataset)), local_rank)
