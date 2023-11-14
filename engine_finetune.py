@@ -30,7 +30,7 @@ def train_one_epoch(args,
     optimizer.zero_grad()
 
     # train one epoch
-    for iter_i, (images, target) in enumerate(metric_logger.log_every(data_loader, print_freq, header)):
+    for iter_i, (images, targets) in enumerate(metric_logger.log_every(data_loader, print_freq, header)):
         ni = iter_i + epoch * epoch_size
         nw = args.wp_epoch * epoch_size
         # Warmup
@@ -40,7 +40,7 @@ def train_one_epoch(args,
                 x['lr'] = np.interp(ni, xi, [0.0, x['initial_lr'] * lf(epoch)])
 
         images = images.to(device, non_blocking=True)
-        target = target.to(device, non_blocking=True)
+        targets = targets.to(device, non_blocking=True)
 
         # Mixup
         if mixup_fn is not None:
@@ -49,7 +49,7 @@ def train_one_epoch(args,
         # Inference
         with torch.cuda.amp.autocast():
             output = model(images)
-            loss = criterion(output, target)
+            loss = criterion(output, targets)
 
         # Check loss
         loss_value = loss.item()
