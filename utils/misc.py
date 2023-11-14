@@ -11,7 +11,7 @@ import torch
 import torch.nn as nn
 import torch.distributed as dist
 
-from .distributed_utils import get_world_size, is_rank_0
+from .distributed_utils import get_world_size, is_main_process
 
 # ---------------------- Common functions ----------------------
 def all_reduce_mean(x):
@@ -27,7 +27,7 @@ def all_reduce_mean(x):
 def print_rank_0(msg, rank=None):
     if rank is not None and rank <= 0:
         print(msg)
-    elif is_rank_0():
+    elif is_main_process():
         print(msg)
 
 def setup_seed(seed=42):

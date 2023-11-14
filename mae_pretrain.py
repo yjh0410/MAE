@@ -1,18 +1,14 @@
-from copy import deepcopy
 import os
 import cv2
 import time
 import math
+import datetime
 import argparse
 import numpy as np
-
-# ---------------- Timm compoments ----------------
-import timm
-import timm.optim.optim_factory as optim_factory
+from copy import deepcopy
 
 # ---------------- Torch compoments ----------------
 import torch
-import torch.optim as optim
 import torch.backends.cudnn as cudnn
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
@@ -241,10 +237,10 @@ def visualize(args, device, model):
     # switch to evaluate mode
     model.eval()
     patch_size = args.patch_size
-    pixel_mean = val_loader.dataset.pixel_mean
-    pixel_std  = val_loader.dataset.pixel_std
+    pixel_mean = val_dataloader.dataset.pixel_mean
+    pixel_std  = val_dataloader.dataset.pixel_std
     with torch.no_grad():
-        for i, (images, target) in enumerate(val_loader):
+        for i, (images, target) in enumerate(val_dataloader):
             images = images.to(device, non_blocking=True)
             target = target.to(device, non_blocking=True)
             # inference
@@ -274,7 +270,7 @@ def visualize(args, device, model):
             # visualize
             vis_image = np.concatenate([masked_img, org_img, pred_img], axis=1)
             vis_image = vis_image[..., (2, 1, 0)]
-            print("[{}]/[{}] | Label: {} | Loss: {:.4f} ".format(i, len(val_loader), int(target[0]), loss.item()))
+            print("[{}]/[{}] | Label: {} | Loss: {:.4f} ".format(i, len(val_dataloader), int(target[0]), loss.item()))
             cv2.imshow('masked | origin | reconstruct ', vis_image)
             cv2.waitKey(0)
 
