@@ -36,7 +36,7 @@ elif [[ $DATASET == "imagenet_1k" || $DATASET == "imagenet_22k" ]]; then
     # Optimizer config
     OPTIMIZER="adamw"
     BASE_LR=0.0005
-    MIN_LR=0
+    MIN_LR=1e-6
     WEIGHT_DECAY=0.05
     LAYER_DECAY=0.65
 fi
@@ -58,7 +58,6 @@ python mae_finetune.py \
         --base_lr ${BASE_LR} \
         --min_lr ${MIN_LR} \
         --weight_decay ${WEIGHT_DECAY} \
-        --mask_ratio ${MASK_RATIO} \
         --reprob 0.25 \
         --mixup 0.8 \
         --cutmix 1.0 \
