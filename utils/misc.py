@@ -11,7 +11,8 @@ import torch
 import torch.nn as nn
 import torch.distributed as dist
 
-from .distributed_utils import get_world_size, is_main_process
+from .distributed_utils import get_world_size, is_main_process, is_dist_avail_and_initialized
+
 
 # ---------------------- Common functions ----------------------
 def all_reduce_mean(x):
