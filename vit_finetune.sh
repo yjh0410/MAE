@@ -1,5 +1,5 @@
 # Model config
-MODEL="mae_vit_tiny"
+MODEL="vit_tiny"
 MAE_PRETRAINED_MODEL="weights/cifar10/mae_vit_tiny/checkpoint-0.pth"
 
 # Batch size
