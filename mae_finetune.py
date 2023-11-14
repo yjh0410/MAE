@@ -6,7 +6,6 @@ import argparse
 import datetime
 
 # ---------------- Timm compoments ----------------
-from timm.models.layers import trunc_normal_
 from timm.data.mixup import Mixup
 from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
 
@@ -143,8 +142,10 @@ def main():
     # set random seed
     setup_seed(args.seed)
 
+    # Path to save model
     path_to_save = os.path.join(args.path_to_save, args.dataset, args.model)
     os.makedirs(path_to_save, exist_ok=True)
+    args.output_dir = path_to_save
     
     # ------------------------- Build DDP environment -------------------------
     local_rank = local_process_rank = -1
@@ -257,7 +258,6 @@ def main():
 
     # ------------------------- Training Pipeline -------------------------
     start_time = time.time()
-    best_acc1 = -1.
     print_rank_0("=============== Start training for {} epochs ===============".format(args.max_epoch), local_rank)
     for epoch in range(args.start_epoch, args.max_epoch):
         # train one epoch

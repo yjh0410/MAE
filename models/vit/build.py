@@ -1,4 +1,6 @@
 import torch
+from timm.models.layers import trunc_normal_
+
 from .pos_embed import interpolate_pos_embed
 
 
@@ -38,6 +40,9 @@ def build_vit(args):
 
         # load encoder weight into ViT's encoder
         model.load_state_dict(encoder_state_dict, strict=False)
+
+        # manually initialize fc layer
+        trunc_normal_(model.classifier.weight, std=2e-5)
 
     return model
 

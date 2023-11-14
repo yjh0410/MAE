@@ -217,7 +217,7 @@ def main():
         lr_scheduler.step()
 
         # Evaluate
-        if local_rank <= 0 and (epoch % args.eval_epoch == 0 or epoch + 1 == args.epochs):
+        if local_rank <= 0 and (epoch % args.eval_epoch == 0 or epoch + 1 == args.max_epoch):
             print('- saving the model after {} epochs ...'.format(epoch))
             save_model(args=args, model=model, model_without_ddp=model_without_ddp,
                        optimizer=optimizer, loss_scaler=loss_scaler, epoch=epoch)
