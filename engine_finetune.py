@@ -2,7 +2,7 @@ import math
 import numpy as np
 import torch
 from utils.misc import MetricLogger, SmoothedValue
-from utils.misc import mae_loss, print_rank_0, all_reduce_mean
+from utils.misc import print_rank_0, all_reduce_mean
 
 
 def train_one_epoch(args,
@@ -22,6 +22,8 @@ def train_one_epoch(args,
     print_freq = 20
     epoch_size = len(data_loader)
 
+    optimizer.zero_grad()
+
     # train one epoch
     for iter_i, (images, _) in enumerate(metric_logger.log_every(data_loader, print_freq, header)):
         ni = iter_i + epoch * epoch_size
@@ -32,15 +34,13 @@ def train_one_epoch(args,
             for x in optimizer.param_groups:
                 x['lr'] = np.interp(ni, xi, [0.0, x['initial_lr'] * lf(epoch)])
 
-        # To device
         images = images.to(device, non_blocking=True)
+        target = target.to(device, non_blocking=True)
 
         # Inference
         with torch.cuda.amp.autocast():
-            ## forward
             output = model(images)
-            ## compute loss
-            loss = mae_loss(images, output['x_pred'], output['mask'], args.patch_size, args.norm_pix_loss)
+            loss = criterion(output, target)
 
         # Check loss
         loss_value = loss.item()
@@ -50,7 +50,8 @@ def train_one_epoch(args,
 
         # Backward & Optimize
         loss /= args.grad_accumulate
-        loss_scaler(loss, optimizer, parameters=model.parameters(),
+        loss_scaler(loss, optimizer, clip_grad=args.max_grad_norm, 
+                    parameters=model.parameters(), create_graph=False,
                     update_grad=(iter_i + 1) % args.grad_accumulate == 0)
         if ni % args.grad_accumulate == 0:
             optimizer.zero_grad()
@@ -69,12 +70,48 @@ def train_one_epoch(args,
             This calibrates different curves when batch size changes.
             """
             epoch_1000x = int((data_iter_step / len(data_loader) + epoch) * 1000)
-            tblogger.add_scalar('train_loss', loss_value_reduce, epoch_1000x)
-            tblogger.add_scalar('lr', lr, epoch_1000x)
-
+            tblogger.add_scalar('loss', loss_value_reduce, epoch_1000x)
+            tblogger.add_scalar('lr', max_lr, epoch_1000x)
 
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
     print_rank_0("Averaged stats: {}".format(metric_logger), local_rank)
+
+    return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
+
+
+@torch.no_grad()
+def evaluate(data_loader, model, device, local_rank):
+    criterion = torch.nn.CrossEntropyLoss()
+
+    metric_logger = MetricLogger(delimiter="  ")
+    header = 'Test:'
+
+    # switch to evaluation mode
+    model.eval()
+
+    for batch in metric_logger.log_every(data_loader, 10, header):
+        images = batch[0]
+        target = batch[-1]
+        images = images.to(device, non_blocking=True)
+        target = target.to(device, non_blocking=True)
+
+        # compute output
+        with torch.cuda.amp.autocast():
+            output = model(images)
+            loss = criterion(output, target)
+
+        acc1, acc5 = accuracy(output, target, topk=(1, 5))
+
+        batch_size = images.shape[0]
+        metric_logger.update(loss=loss.item())
+        metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
+        metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
+
+    # gather the stats from all processes
+    metric_logger.synchronize_between_processes()
+    print_rank_0('* Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f} loss {losses.global_avg:.3f}'
+                 .format(top1=metric_logger.acc1, top5=metric_logger.acc5, losses=metric_logger.loss),
+                 local_rank)
 
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}

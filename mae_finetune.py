@@ -5,19 +5,32 @@ import math
 import argparse
 import numpy as np
 
+# ---------------- Timm compoments ----------------
+from timm.models.layers import trunc_normal_
+from timm.data.mixup import Mixup
+from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
+
+# ---------------- Torch compoments ----------------
 import torch
 import torch.optim as optim
 import torch.backends.cudnn as cudnn
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 
-from data import build_dataset, build_dataloader, build_transform
+# ---------------- Dataset compoments ----------------
+from data import build_dataset, build_dataloader
+
+# ---------------- Model compoments ----------------
 from models import build_model
 
+# ---------------- Utils compoments ----------------
 from utils import lr_decay
 from utils import distributed_utils
-from utils.misc import setup_seed, accuracy
-from utils.com_flops_params import FLOPs_and_Params
+from utils.misc import setup_seed, accuracy, print_rank_0
+from utils.com_flops_params import FLOPs_and_Params, MetricLogger
+from utils.misc import NativeScalerWithGradNormCount as NativeScaler
+
+from engine_finetune import train_one_epoch, evaluate
 
 
 def parse_args():
@@ -83,6 +96,35 @@ def parse_args():
                         help='gradient accumulation')
     parser.add_argument('--max_grad_norm', type=float, default=None,
                         help='Clip gradient norm (default: None, no clipping)')
+    # Augmentation parameters
+    parser.add_argument('--color_jitter', type=float, default=None, metavar='PCT',
+                        help='Color jitter factor (enabled only when not using Auto/RandAug)')
+    parser.add_argument('--aa', type=str, default='rand-m9-mstd0.5-inc1', metavar='NAME',
+                        help='Use AutoAugment policy. "v0" or "original". " + "(default: rand-m9-mstd0.5-inc1)'),
+    parser.add_argument('--smoothing', type=float, default=0.1,
+                        help='Label smoothing (default: 0.1)')
+    # Random Erase params
+    parser.add_argument('--reprob', type=float, default=0.25, metavar='PCT',
+                        help='Random erase prob (default: 0.25)')
+    parser.add_argument('--remode', type=str, default='pixel',
+                        help='Random erase mode (default: "pixel")')
+    parser.add_argument('--recount', type=int, default=1,
+                        help='Random erase count (default: 1)')
+    parser.add_argument('--resplit', action='store_true', default=False,
+                        help='Do not random erase first (clean) augmentation split')
+    # Mixup params
+    parser.add_argument('--mixup', type=float, default=0,
+                        help='mixup alpha, mixup enabled if > 0.')
+    parser.add_argument('--cutmix', type=float, default=0,
+                        help='cutmix alpha, cutmix enabled if > 0.')
+    parser.add_argument('--cutmix_minmax', type=float, nargs='+', default=None,
+                        help='cutmix min/max ratio, overrides alpha and enables cutmix if set (default: None)')
+    parser.add_argument('--mixup_prob', type=float, default=1.0,
+                        help='Probability of performing mixup or cutmix when either/both is enabled')
+    parser.add_argument('--mixup_switch_prob', type=float, default=0.5,
+                        help='Probability of switching to cutmix when both mixup and cutmix enabled')
+    parser.add_argument('--mixup_mode', type=str, default='batch',
+                        help='How to apply mixup/cutmix params. Per "batch", "pair", or "elem"')
     # DDP
     parser.add_argument('-dist', '--distributed', action='store_true', default=False,
                         help='distributed training')
@@ -98,7 +140,6 @@ def parse_args():
     
 def main():
     args = parse_args()
-    print(args)
     # set random seed
     setup_seed(args.seed)
 
@@ -106,50 +147,67 @@ def main():
     os.makedirs(path_to_save, exist_ok=True)
     
     # ------------------------- Build DDP environment -------------------------
+    local_rank = local_process_rank = -1
     print('World size: {}'.format(distributed_utils.get_world_size()))
     if args.distributed:
         distributed_utils.init_distributed_mode(args)
         print("git:\n  {}\n".format(distributed_utils.get_sha()))
+        try:
+            # Multiple Mechine & Multiple GPUs (world size > 8)
+            local_rank = torch.distributed.get_rank()
+            local_process_rank = int(os.getenv('LOCAL_PROCESS_RANK', '0'))
+        except:
+            # Single Mechine & Multiple GPUs (world size <= 8)
+            local_rank = local_process_rank = torch.distributed.get_rank()
 
+    print_rank_0(args, local_rank)
     # ------------------------- Build CUDA -------------------------
     if args.cuda:
-        print("use cuda")
         cudnn.benchmark = True
         device = torch.device("cuda")
     else:
         device = torch.device("cpu")
 
     # ------------------------- Build Tensorboard -------------------------
-    if args.tfboard:
+    if local_rank <= 0 and args.tfboard:
         print('use tensorboard')
         from torch.utils.tensorboard import SummaryWriter
-        c_time = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
-        log_path = os.path.join('log/', args.dataset, c_time)
+        time_stamp = time.strftime('%Y-%m-%d_%H:%M:%S',time.localtime(time.time()))
+        log_path = os.path.join('log/', args.dataset, time_stamp)
         os.makedirs(log_path, exist_ok=True)
         tblogger = SummaryWriter(log_path)
 
-    # ------------------------- Build Transforms -------------------------
-    train_transform = build_transform(args, is_train=True)
-    val_transform = build_transform(args, is_train=False)
-
     # ------------------------- Build Dataset -------------------------
-    train_dataset = build_dataset(args, train_transform, is_train=True)
-    val_dataset = build_dataset(args, val_transform, is_train=False)
+    train_dataset = build_dataset(args, is_train=True)
+    val_dataset   = build_dataset(args, is_train=False)
 
     # ------------------------- Build Dataloader -------------------------
     train_dataloader = build_dataloader(args, train_dataset, is_train=True)
-    val_dataloader = build_dataloader(args, val_dataset, is_train=False)
-    epoch_size = len(train_dataloader)
+    val_dataloader   = build_dataloader(args, val_dataset,   is_train=False)
 
     print('=================== Dataset Information ===================')
     print('Train dataset size : ', len(train_dataset))
     print('Val dataset size   : ', len(val_dataset))
 
+    # ------------------------- Mixup config -------------------------
+    mixup_fn = None
+    mixup_active = args.mixup > 0 or args.cutmix > 0. or args.cutmix_minmax is not None
+    if mixup_active:
+        print_rank_0(msg)("Mixup is activated!", local_rank)
+        mixup_fn = Mixup(mixup_alpha     = args.mixup,
+                         cutmix_alpha    = args.cutmix,
+                         cutmix_minmax   = args.cutmix_minmax,
+                         prob            = args.mixup_prob,
+                         switch_prob     = args.mixup_switch_prob,
+                         mode            = args.mixup_mode,
+                         label_smoothing = args.smoothing,
+                         num_classes     = args.num_classes)
+
     # ------------------------- Build Model -------------------------
     model = build_model(args)
     model.train().to(device)
     print(model)
-    if distributed_utils.is_main_process:
+    if local_rank <= 0:
         model_copy = deepcopy(model)
         model_copy.eval()
         FLOPs_and_Params(model=model_copy, size=args.img_size)
@@ -166,18 +224,28 @@ def main():
         model_without_ddp = model.module
 
     # ------------------------- Build Optimzier -------------------------
-    args.base_lr = args.base_lr / 256 * args.batch_size * args.grad_accumulate  # auto scale lr
-    args.min_lr = args.min_lr / 256 * args.batch_size * args.grad_accumulate    # auto scale lr
+    ## learning rate
+    args.base_lr = args.base_lr / 256 * args.batch_size * args.grad_accumulate    # auto scale lr
+    args.min_lr  = args.min_lr  / 256 * args.batch_size * args.grad_accumulate    # auto scale lr
+    ## optimizer
     param_groups = lr_decay.param_groups_lrd(model_without_ddp, args.weight_decay, model_without_ddp.no_weight_decay(), args.layer_decay)
     optimizer = torch.optim.AdamW(param_groups, lr=args.base_lr)
+    ## loss scaler
+    loss_scaler = NativeScaler()
 
     # ------------------------- Build Lr Scheduler -------------------------
     lf = lambda x: ((1 - math.cos(x * math.pi / args.max_epoch)) / 2) * (args.min_lr / args.base_lr - 1) + 1
     lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
 
     # ------------------------- Build Criterion -------------------------
-    criterion = torch.nn.CrossEntropyLoss().to(device)
-    scaler = torch.cuda.amp.GradScaler()
+    if mixup_fn is not None:
+        # smoothing is handled with mixup label transform
+        criterion = SoftTargetCrossEntropy()
+    elif args.smoothing > 0.:
+        criterion = LabelSmoothingCrossEntropy(smoothing=args.smoothing)
+    else:
+        criterion = torch.nn.CrossEntropyLoss()
+    load_model(args=args, model_without_ddp=model_without_ddp, optimizer=optimizer, loss_scaler=loss_scaler)
 
     # ------------------------- Eval before Train Pipeline -------------------------
     if args.eval:
@@ -187,131 +255,42 @@ def main():
         exit(0)
 
     # ------------------------- Training Pipeline -------------------------
-    t0 = time.time()
+    start_time = time.time()
     best_acc1 = -1.
-    print("=================== Start training ===================")
+    print_rank_0("=============== Start training for {} epochs ===============".format(args.max_epoch), local_rank)
     for epoch in range(args.start_epoch, args.max_epoch):
+        # train one epoch
         if args.distributed:
             train_dataloader.batch_sampler.sampler.set_epoch(epoch)
+        train_stats = train_one_epoch(args, device, model, train_dataloader, optimizer, epoch, lf, loss_scaler, local_rank, tblogger)
 
-        # train one epoch
-        for iter_i, (images, target) in enumerate(train_dataloader):
-            ni = iter_i + epoch * epoch_size
-            nw = args.wp_epoch * epoch_size
-            # Warmup
-            if ni <= nw:
-                xi = [0, nw]  # x interp
-                for x in optimizer.param_groups:
-                    x['lr'] = np.interp(ni, xi, [0.0, x['initial_lr'] * lf(epoch)])
-
-            images = images.to(device, non_blocking=True)
-            target = target.to(device, non_blocking=True)
-
-            # Inference
-            with torch.cuda.amp.autocast():
-                output = model(images)
-                loss = criterion(output, target)
-
-            # Accuracy
-            acc = accuracy(output, target, topk=(1, 5,))            
-
-            # Backward
-            loss /= args.grad_accumulate
-            scaler.scale(loss).backward()
-
-            # Update
-            if ni % args.grad_accumulate == 0:
-                if args.max_grad_norm:
-                    # unscale gradients
-                    scaler.unscale_(optimizer)
-                    # clip gradients
-                    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=args.max_grad_norm)
-                # optimizer.step
-                scaler.step(optimizer)
-                scaler.update()
-                optimizer.zero_grad()
-            
-            # Logs
-            if distributed_utils.is_main_process() and iter_i % 10 == 0:
-                if args.tfboard:
-                    # viz loss
-                    tblogger.add_scalar('loss',  loss.item() * args.grad_accumulate,  ni)
-                    tblogger.add_scalar('acc1',  acc[0].item(),  ni)
-                    tblogger.add_scalar('acc5',  acc[1].item(),  ni)
-                
-                t1 = time.time()
-                cur_lr = [param_group['lr']  for param_group in optimizer.param_groups]
-                # basic infor
-                log =  '[Epoch: {}/{}]'.format(epoch + 1, args.max_epoch)
-                log += '[Iter: {}/{}]'.format(iter_i, epoch_size)
-                log += '[lr: {:.6f}]'.format(cur_lr[0])
-                # loss infor
-                log += '[loss: {:.6f}]'.format(loss.item() * args.grad_accumulate)
-                # other infor
-                log += '[acc1: {:.2f}]'.format(acc[0].item())
-                log += '[acc5: {:.2f}]'.format(acc[1].item())
-                log += '[time: {:.2f}]'.format(t1 - t0)
-
-                # print log infor
-                print(log, flush=True)
-                
-                t0 = time.time()
-
-        # Evaluate
-        if distributed_utils.is_main_process():
-            if (epoch % args.eval_epoch) == 0 or (epoch == args.max_epoch - 1):
-                print('evaluating ...')
-                loss, acc1 = validate(device, val_dataloader, model_without_ddp, criterion)
-                print('Eval Results: [loss: %.2f][acc1: %.2f]' % (loss.item(), acc1[0].item()), flush=True)
-
-                is_best = acc1 > best_acc1
-                best_acc1 = max(acc1, best_acc1)
-                if is_best:
-                    print('saving the model ...')
-                    weight_name = '{}_epoch_{}_{:.2f}.pth'.format(args.model, epoch, acc1[0].item())
-                    checkpoint_path = os.path.join(path_to_save, weight_name)
-                    torch.save({'model': model_without_ddp.state_dict(),
-                                'optimizer': optimizer.state_dict(),
-                                'acc1': acc1[0].item(),
-                                'epoch': epoch},
-                                checkpoint_path)                      
-
+        # LR scheduler
         lr_scheduler.step()
 
+        # Save model
+        if local_rank <= 0 and (epoch % args.eval_epoch) == 0 or (epoch + 1 == args.max_epoch):
+            print('- saving the model after {} epochs ...'.format(epoch))
+            save_model(args=args, model=model, model_without_ddp=model_without_ddp,
+                       optimizer=optimizer, loss_scaler=loss_scaler, epoch=epoch)
+        if args.distributed:
+            dist.barrier()
 
-def validate(device, val_loader, model, criterion):
-    # switch to evaluate mode
-    model.eval()
-    acc1_num_pos = 0.
-    count = 0.
-    with torch.no_grad():
-        for i, (images, target) in enumerate(val_loader):
-            if i % 100 == 0:
-                print("[%d]/[%d] ..." % (i, len(val_loader)))
-            images = images.to(device, non_blocking=True)
-            target = target.to(device, non_blocking=True)
+        # Evaluate
+        test_stats = evaluate(val_dataloader, model, device, local_rank)
+        print_rank_0(f"Accuracy of the network on the {len(val_dataset)} test images: {test_stats['acc1']:.1f}%", local_rank)
+        max_accuracy = max(max_accuracy, test_stats["acc1"])
+        print_rank_0(f'Max accuracy: {max_accuracy:.2f}%', local_rank)
 
-            # inference
-            output = model(images)
+        if tblogger is not None:
+            tblogger.add_scalar('perf/test_acc1', test_stats['acc1'], epoch)
+            tblogger.add_scalar('perf/test_acc5', test_stats['acc5'], epoch)
+            tblogger.add_scalar('perf/test_loss', test_stats['loss'], epoch)
+        if args.distributed:
+            dist.barrier()
 
-            # loss
-            loss = criterion(output, target)
-
-            # accuracy
-            cur_acc1 = accuracy(output, target, topk=(1,))
-
-            # Count the number of positive samples
-            bs = images.shape[0]
-            count += bs
-            acc1_num_pos += cur_acc1[0] * bs
-        
-        # top1 acc
-        acc1 = acc1_num_pos / count
-
-    # switch to train mode
-    model.train()
-
-    return loss, acc1
+    total_time = time.time() - start_time
+    total_time_str = str(datetime.timedelta(seconds=int(total_time)))
+    print('Training time {}'.format(total_time_str))
 
 
 if __name__ == "__main__":

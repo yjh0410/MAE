@@ -9,24 +9,26 @@ from pathlib import Path
 
 import torch
 import torch.nn as nn
+import torch.distributed as dist
 
+from .distributed_utils import get_world_size, is_rank_0
 
 # ---------------------- Common functions ----------------------
+def all_reduce_mean(x):
+    world_size = get_world_size()
+    if world_size > 1:
+        x_reduce = torch.tensor(x).cuda()
+        dist.all_reduce(x_reduce)
+        x_reduce /= world_size
+        return x_reduce.item()
+    else:
+        return x
+
 def print_rank_0(msg, rank=None):
     if rank is not None and rank <= 0:
         print(msg)
     elif is_rank_0():
         print(msg)
-
-def is_rank_0():
-    """Check whether it is rank 0."""
-    if torch.distributed.is_initialized():
-        if torch.distributed.get_rank() == 0:
-            return True
-        else:
-            return False
-    else:
-        return True
 
 def setup_seed(seed=42):
     torch.manual_seed(seed)
