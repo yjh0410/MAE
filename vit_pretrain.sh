@@ -34,6 +34,7 @@ elif [[ $DATASET == "imagenet_1k" || $DATASET == "imagenet_22k" ]]; then
     PATCH_SIZE=16
 fi
 
+
 # --------------- Pretrain ---------------
 python mae_pretrain.py \
         --cuda \
