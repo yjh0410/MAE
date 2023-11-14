@@ -4,6 +4,20 @@ MODEL="mae_vit_tiny"
 # Batch size
 BATCH_SIZE=256
 
+# Epoch config
+MAX_EPOCH=800
+WP_EPOCH=40
+EVAL_EPOCH=20
+
+# Optimizer config
+OPTIMIZER="adamw"
+BASE_LR=0.00015
+MIN_LR=0
+WEIGHT_DECAY=0.05
+
+# Mask ratio
+MASK_RATIO=0.75
+
 # Dataset config
 DATASET="cifar10"
 if [[ $DATASET == "cifar10" || $DATASET == "cifar100" ]]; then
@@ -12,34 +26,12 @@ if [[ $DATASET == "cifar10" || $DATASET == "cifar100" ]]; then
     # Image config
     IMG_SIZE=32
     PATCH_SIZE=2
-    # Epoch config
-    MAX_EPOCH=400
-    WP_EPOCH=40
-    EVAL_EPOCH=20
-    # Optimizer config
-    OPTIMIZER="adamw"
-    BASE_LR=0.001
-    MIN_LR=0
-    WEIGHT_DECAY=0.05
-    # Mask ratio
-    MASK_RATIO=0.75
 elif [[ $DATASET == "imagenet_1k" || $DATASET == "imagenet_22k" ]]; then
     # Data root
     ROOT="path/to/imagenet"
     # Image config
     IMG_SIZE=224
     PATCH_SIZE=16
-    # Epoch config
-    MAX_EPOCH=800
-    WP_EPOCH=40
-    EVAL_EPOCH=20
-    # Optimizer config
-    OPTIMIZER="adamw"
-    BASE_LR=0.00015
-    MIN_LR=0
-    WEIGHT_DECAY=0.05
-    # Mask ratio
-    MASK_RATIO=0.75
 fi
 
 # --------------- Pretrain ---------------
