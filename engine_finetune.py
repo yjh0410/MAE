@@ -44,7 +44,7 @@ def train_one_epoch(args,
 
         # Mixup
         if mixup_fn is not None:
-            samples, targets = mixup_fn(samples, targets)
+            images, targets = mixup_fn(images, targets)
 
         # Inference
         with torch.cuda.amp.autocast():
