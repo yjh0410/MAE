@@ -263,7 +263,8 @@ def main():
         # train one epoch
         if args.distributed:
             train_dataloader.batch_sampler.sampler.set_epoch(epoch)
-        train_stats = train_one_epoch(args, device, model, train_dataloader, optimizer, epoch, lf, loss_scaler, local_rank, tblogger)
+        train_stats = train_one_epoch(args, device, model, train_dataloader, optimizer, epoch,
+                                      lf, loss_scaler, criterion, local_rank, tblogger)
 
         # LR scheduler
         lr_scheduler.step()
