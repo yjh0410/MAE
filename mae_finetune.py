@@ -270,19 +270,20 @@ def main():
         # LR scheduler
         lr_scheduler.step()
 
-        # Save model
-        if local_rank <= 0 and (epoch % args.eval_epoch) == 0 or (epoch + 1 == args.max_epoch):
-            print('- saving the model after {} epochs ...'.format(epoch))
-            save_model(args=args, model=model, model_without_ddp=model_without_ddp,
-                       optimizer=optimizer, loss_scaler=loss_scaler, epoch=epoch)
+        # Evaluate
+        if (epoch % args.eval_epoch) == 0 or (epoch + 1 == args.max_epoch):
+            test_stats = evaluate(val_dataloader, model, device, local_rank)
+            print_rank_0(f"Accuracy of the network on the {len(val_dataset)} test images: {test_stats['acc1']:.1f}%", local_rank)
+            max_accuracy = max(max_accuracy, test_stats["acc1"])
+            print_rank_0(f'Max accuracy: {max_accuracy:.2f}%', local_rank)
+
+            # Save model
+            if local_rank <= 0:
+                print('- saving the model after {} epochs ...'.format(epoch))
+                save_model(args=args, model=model, model_without_ddp=model_without_ddp,
+                           optimizer=optimizer, loss_scaler=loss_scaler, epoch=epoch)
         if args.distributed:
             dist.barrier()
-
-        # Evaluate
-        test_stats = evaluate(val_dataloader, model, device, local_rank)
-        print_rank_0(f"Accuracy of the network on the {len(val_dataset)} test images: {test_stats['acc1']:.1f}%", local_rank)
-        max_accuracy = max(max_accuracy, test_stats["acc1"])
-        print_rank_0(f'Max accuracy: {max_accuracy:.2f}%', local_rank)
 
         if tblogger is not None:
             tblogger.add_scalar('perf/test_acc1', test_stats['acc1'], epoch)
