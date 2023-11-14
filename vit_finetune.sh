@@ -58,7 +58,7 @@ python mae_finetune.py \
         --base_lr ${BASE_LR} \
         --min_lr ${MIN_LR} \
         --weight_decay ${WEIGHT_DECAY} \
-        --reprob 0.0 \
-        --mixup 0.0 \
-        --cutmix 0.0 \
+        --reprob 0.25 \
+        --mixup 0.8 \
+        --cutmix 1.0 \
         --mae_pretrained ${MAE_PRETRAINED_MODEL} \
