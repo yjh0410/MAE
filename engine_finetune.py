@@ -1,8 +1,11 @@
+import sys
 import math
 import numpy as np
+
 import torch
+
 from utils.misc import MetricLogger, SmoothedValue
-from utils.misc import print_rank_0, all_reduce_mean
+from utils.misc import print_rank_0, all_reduce_mean, accuracy
 
 
 def train_one_epoch(args,
@@ -13,6 +16,7 @@ def train_one_epoch(args,
                     epoch,
                     lf,
                     loss_scaler,
+                    criterion,
                     local_rank,
                     tblogger=None):
     model.train(True)
@@ -25,7 +29,7 @@ def train_one_epoch(args,
     optimizer.zero_grad()
 
     # train one epoch
-    for iter_i, (images, _) in enumerate(metric_logger.log_every(data_loader, print_freq, header)):
+    for iter_i, (images, target) in enumerate(metric_logger.log_every(data_loader, print_freq, header)):
         ni = iter_i + epoch * epoch_size
         nw = args.wp_epoch * epoch_size
         # Warmup
@@ -69,9 +73,9 @@ def train_one_epoch(args,
             """ We use epoch_1000x as the x-axis in tensorboard.
             This calibrates different curves when batch size changes.
             """
-            epoch_1000x = int((data_iter_step / len(data_loader) + epoch) * 1000)
+            epoch_1000x = int((iter_i / len(data_loader) + epoch) * 1000)
             tblogger.add_scalar('loss', loss_value_reduce, epoch_1000x)
-            tblogger.add_scalar('lr', max_lr, epoch_1000x)
+            tblogger.add_scalar('lr', lr, epoch_1000x)
 
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
