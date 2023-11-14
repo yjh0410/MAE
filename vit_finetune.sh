@@ -23,8 +23,6 @@ if [[ $DATASET == "cifar10" || $DATASET == "cifar100" ]]; then
     MIN_LR=1e-6
     WEIGHT_DECAY=0.05
     LAYER_DECAY=0.65
-    # Mask ratio
-    MASK_RATIO=0.75
 elif [[ $DATASET == "imagenet_1k" || $DATASET == "imagenet_22k" ]]; then
     # Data root
     ROOT="path/to/imagenet"
@@ -41,8 +39,6 @@ elif [[ $DATASET == "imagenet_1k" || $DATASET == "imagenet_22k" ]]; then
     MIN_LR=0
     WEIGHT_DECAY=0.05
     LAYER_DECAY=0.65
-    # Mask ratio
-    MASK_RATIO=0.75
 fi
 
 
