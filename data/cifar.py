@@ -50,7 +50,6 @@ class CifarDataset(data.Dataset):
 if __name__ == "__main__":
     import cv2
     import argparse
-    from transforms import build_cifar_transform
     
     parser = argparse.ArgumentParser(description='Cifar-Dataset')
 
@@ -71,5 +70,5 @@ if __name__ == "__main__":
         image = image[..., (2, 1, 0)]
         print(image.shape)
 
-        # cv2.imshow('image', image)
-        # cv2.waitKey(0)
+        cv2.imshow('image', image)
+        cv2.waitKey(0)

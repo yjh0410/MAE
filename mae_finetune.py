@@ -3,7 +3,7 @@ import os
 import time
 import math
 import argparse
-import numpy as np
+import datetime
 
 # ---------------- Timm compoments ----------------
 from timm.models.layers import trunc_normal_
@@ -26,8 +26,8 @@ from models import build_model
 # ---------------- Utils compoments ----------------
 from utils import lr_decay
 from utils import distributed_utils
-from utils.misc import setup_seed, accuracy, print_rank_0
-from utils.com_flops_params import FLOPs_and_Params, MetricLogger
+from utils.misc import setup_seed, print_rank_0, load_model, save_model
+from utils.com_flops_params import FLOPs_and_Params
 from utils.misc import NativeScalerWithGradNormCount as NativeScaler
 
 from engine_finetune import train_one_epoch, evaluate
@@ -169,6 +169,7 @@ def main():
         device = torch.device("cpu")
 
     # ------------------------- Build Tensorboard -------------------------
+    tblogger = None
     if local_rank <= 0 and args.tfboard:
         print('use tensorboard')
         from torch.utils.tensorboard import SummaryWriter
@@ -193,7 +194,7 @@ def main():
     mixup_fn = None
     mixup_active = args.mixup > 0 or args.cutmix > 0. or args.cutmix_minmax is not None
     if mixup_active:
-        print_rank_0(msg)("Mixup is activated!", local_rank)
+        print_rank_0("Mixup is activated!", local_rank)
         mixup_fn = Mixup(mixup_alpha     = args.mixup,
                          cutmix_alpha    = args.cutmix,
                          cutmix_minmax   = args.cutmix_minmax,
@@ -250,8 +251,8 @@ def main():
     # ------------------------- Eval before Train Pipeline -------------------------
     if args.eval:
         print('evaluating ...')
-        loss, acc1 = validate(device, val_dataloader, model_without_ddp, criterion)
-        print('Eval Results: [loss: %.2f][acc1: %.2f]' % (loss.item(), acc1[0].item()), flush=True)
+        test_stats = evaluate(val_dataloader, model, device, local_rank)
+        print('Eval Results: [loss: %.2f][acc1: %.2f]' % (test_stats['loss'], test_stats['acc1']), flush=True)
         exit(0)
 
     # ------------------------- Training Pipeline -------------------------

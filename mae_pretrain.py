@@ -135,6 +135,7 @@ def main():
         device = torch.device("cpu")
 
     # ------------------------- Build Tensorboard -------------------------
+    tblogger = None
     if local_rank <= 0 and args.tfboard:
         print('use tensorboard')
         from torch.utils.tensorboard import SummaryWriter
