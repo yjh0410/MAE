@@ -22,7 +22,7 @@ if [[ $DATASET == "cifar10" || $DATASET == "cifar100" ]]; then
     BASE_LR=1e-3
     MIN_LR=1e-6
     WEIGHT_DECAY=0.05
-    LAYER_DECAY=0.75
+    LAYER_DECAY=0.65
     # Mask ratio
     MASK_RATIO=0.75
 elif [[ $DATASET == "imagenet_1k" || $DATASET == "imagenet_22k" ]]; then
@@ -40,7 +40,7 @@ elif [[ $DATASET == "imagenet_1k" || $DATASET == "imagenet_22k" ]]; then
     BASE_LR=0.0005
     MIN_LR=0
     WEIGHT_DECAY=0.05
-    LAYER_DECAY=0.75
+    LAYER_DECAY=0.65
     # Mask ratio
     MASK_RATIO=0.75
 fi
@@ -63,4 +63,7 @@ python mae_finetune.py \
         --min_lr ${MIN_LR} \
         --weight_decay ${WEIGHT_DECAY} \
         --mask_ratio ${MASK_RATIO} \
+        --reprob 0.25 \
+        --mixup 0.8 \
+        --cutmix 1.0 \
         --mae_pretrained ${MAE_PRETRAINED_MODEL} \
