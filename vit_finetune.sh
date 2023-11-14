@@ -1,30 +1,66 @@
+# Model config
+MODEL="mae_vit_tiny"
+MAE_PRETRAINED_MODEL=""
+
+# Batch size
+BATCH_SIZE=256
+
+# Dataset config
+DATASET="cifar10"
+if [[ $DATASET == "cifar10" || $DATASET == "cifar100" ]]; then
+    # Data root
+    ROOT="none"
+    # Image config
+    IMG_SIZE=32
+    PATCH_SIZE=2
+    # Epoch config
+    MAX_EPOCH=400
+    WP_EPOCH=40
+    EVAL_EPOCH=20
+    # Optimizer config
+    OPTIMIZER="adamw"
+    BASE_LR=1e-3
+    MIN_LR=1e-6
+    WEIGHT_DECAY=0.05
+    LAYER_DECAY=0.75
+    # Mask ratio
+    MASK_RATIO=0.75
+elif [[ $DATASET == "imagenet_1k" || $DATASET == "imagenet_22k" ]]; then
+    # Data root
+    ROOT="path/to/imagenet"
+    # Image config
+    IMG_SIZE=224
+    PATCH_SIZE=16
+    # Epoch config
+    MAX_EPOCH=800
+    WP_EPOCH=40
+    EVAL_EPOCH=20
+    # Optimizer config
+    OPTIMIZER="adamw"
+    BASE_LR=0.0005
+    MIN_LR=0
+    WEIGHT_DECAY=0.05
+    LAYER_DECAY=0.75
+    # Mask ratio
+    MASK_RATIO=0.75
+fi
+
+
 # --------------- Finetune on CIFAR ---------------
 python mae_finetune.py \
         --cuda \
-        --dataset cifar10 \
-        -m vit_tiny \
-        --batch_size 256 \
-        --img_size 32 \
-        --patch_size 2 \
-        --max_epoch 50 \
-        --wp_epoch 5 \
-        --base_lr 1e-3 \
-        --min_lr 1e-6 \
-        --layer_decay 0.75 \
-        --weight_decay 0.05 \
-        --mae_pretrained weights/cifar10/mae_vit_tiny/mae_vit_tiny_epoch_399_0.03.pth
-
-# --------------- Finetune on ImageNet ---------------
-# python mae_finetune.py \
-#         --cuda \
-#         --root path/to/imagenet_1k \
-#         --dataset imagenet_1k \
-#         -m vit_tiny \
-#         --batch_size 256 \
-#         --img_size 224 \
-#         --patch_size 16 \
-#         --max_epoch 100 \
-#         --wp_epoch 5 \
-#         --base_lr 0.0005 \
-#         --weight_decay 0.05 \
-#         --mae_pretrained weights/imagenet_1k/mae_vit_tiny/mae_vit_tiny_imagenet_1k.pth
+        --root ${ROOT} \
+        --dataset ${DATASET} \
+        -m ${MODEL} \
+        --batch_size ${BATCH_SIZE} \
+        --img_size ${IMG_SIZE} \
+        --patch_size ${PATCH_SIZE} \
+        --max_epoch ${MAX_EPOCH} \
+        --wp_epoch ${WP_EPOCH} \
+        --eval_epoch ${EVAL_EPOCH} \
+        --optimizer ${OPTIMIZER} \
+        --base_lr ${BASE_LR} \
+        --min_lr ${MIN_LR} \
+        --weight_decay ${WEIGHT_DECAY} \
+        --mask_ratio ${MASK_RATIO} \
+        --mae_pretrained ${MAE_PRETRAINED_MODEL} \
