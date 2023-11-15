@@ -134,8 +134,11 @@ def main():
 
     # ------------------------- Build CUDA -------------------------
     if args.cuda:
-        cudnn.benchmark = True
-        device = torch.device("cuda")
+        try:
+            cudnn.benchmark = True
+            device = torch.device("cuda")
+        except:
+            device = torch.device("cpu")
     else:
         device = torch.device("cpu")
 
