@@ -7,62 +7,62 @@ Due to limited resources, I only test my randomly designed `ViT-Nano` on the `CI
 - Train `MAE-ViT-Nano` on CIFAR10 dataset:
 
 ```Shell
-python mae_pretrain.py --dataset cifar10 -m mae_vit_nano --batch_size 256 --img_size 32 --patch_size 2 --max_epoch 400 --wp_epoch 40
+python train_pretrain.py --dataset cifar10 -m mae_vit_nano --batch_size 256 --img_size 32 --patch_size 2 --max_epoch 400 --wp_epoch 40
 ```
 
 - Train `MAE-ViT-Nano` on ImageNet dataset:
 
 ```Shell
-python mae_pretrain.py --dataset imagenet_1k -m mae_vit_nano --batch_size 256 --img_size 224 --patch_size 16 --max_epoch 400 --wp_epoch 40
+python train_pretrain.py --dataset imagenet_1k -m mae_vit_nano --batch_size 256 --img_size 224 --patch_size 16 --max_epoch 400 --wp_epoch 40
 ```
 
 ## 2. Train from scratch
 - Train `ViT-Nano` on CIFAR10 dataset:
 
 ```Shell
-python mae_finetune.py --dataset cifar10 -m vit_nano --batch_size 256 --img_size 32 --patch_size 2 --max_epoch 200 --wp_epoch 20
+python train_finetune.py --dataset cifar10 -m vit_nano --batch_size 256 --img_size 32 --patch_size 2 --max_epoch 200 --wp_epoch 20
 ```
 
 - Train `ViT-Nano` on ImageNet dataset:
 
 ```Shell
-python mae_finetune.py --dataset imagenet_1k -m vit_nano --batch_size 256 --img_size 224 --patch_size 16 --max_epoch 200 --wp_epoch 20
+python train_finetune.py --dataset imagenet_1k -m vit_nano --batch_size 256 --img_size 224 --patch_size 16 --max_epoch 200 --wp_epoch 20
 ```
 
 ## 3. Train from MAE pretrained
 - Train `ViT-Nano` on CIFAR10 dataset:
 
 ```Shell
-python mae_finetune.py --dataset cifar10 -m vit_nano --batch_size 256 --img_size 32 --patch_size 2  --max_epoch 50 --wp_epoch 5 --mae_pretrained path/to/mae_vit_nano_cifar10.pth
+python train_finetune.py --dataset cifar10 -m vit_nano --batch_size 256 --img_size 32 --patch_size 2  --max_epoch 50 --wp_epoch 5 --mae_pretrained path/to/mae_vit_nano_cifar10.pth
 ```
 
 - Train `ViT-Nano` on ImageNet dataset:
 
 ```Shell
-python mae_finetune.py --dataset imagenet_1k -m vit_nano --batch_size 256 --img_size 224 --patch_size 16 --max_epoch 50 --wp_epoch 5 --mae_pretrained path/to/mae_vit_nano_imagenet_1k.pth
+python train_finetune.py --dataset imagenet_1k -m vit_nano --batch_size 256 --img_size 224 --patch_size 16 --max_epoch 50 --wp_epoch 5 --mae_pretrained path/to/mae_vit_nano_imagenet_1k.pth
 ```
 
 ## 4. Evaluate 
 - Evaluate the `top1 & top5` accuracy of `ViT-Nano` on CIFAR10 dataset:
 ```Shell
-python mae_finetune.py --dataset cifar10 -m vit_nano --batch_size 256 --img_size 32 --patch_size 2 --eval --resume path/to/vit_nano_cifar10.pth
+python train_finetune.py --dataset cifar10 -m vit_nano --batch_size 256 --img_size 32 --patch_size 2 --eval --resume path/to/vit_nano_cifar10.pth
 ```
 
 - Evaluate the `top1 & top5` accuracy of `ViT-Nano` on ImageNet-1K dataset:
 ```Shell
-python mae_finetune.py --dataset imagenet_1k -m vit_nano --batch_size 256 --img_size 224 --patch_size 16 --eval --resume path/to/vit_nano_imagenet_1k.pth
+python train_finetune.py --dataset imagenet_1k -m vit_nano --batch_size 256 --img_size 224 --patch_size 16 --eval --resume path/to/vit_nano_imagenet_1k.pth
 ```
 
 
 ## 5. Visualize Image Reconstruction
 - Evaluate `MAE-ViT-Nano` on CIFAR10 dataset:
 ```Shell
-python mae_pretrain.py --dataset cifar10 -m mae_vit_nano --resume path/to/mae_vit_nano_cifar10.pth --img_size 32 --patch_size 2 --eval --batch_size 1
+python train_pretrain.py --dataset cifar10 -m mae_vit_nano --resume path/to/mae_vit_nano_cifar10.pth --img_size 32 --patch_size 2 --eval --batch_size 1
 ```
 
 - Evaluate `MAE-ViT-Nano` on ImageNet-1K dataset:
 ```Shell
-python mae_pretrain.py --dataset imagenet_1k -m mae_vit_nano --resume path/to/mae_vit_nano_imagenet_1k.pth --img_size 224 --patch_size 16 --eval --batch_size 1
+python train_pretrain.py --dataset imagenet_1k -m mae_vit_nano --resume path/to/mae_vit_nano_imagenet_1k.pth --img_size 224 --patch_size 16 --eval --batch_size 1
 ```
 
 
