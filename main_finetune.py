@@ -81,6 +81,8 @@ def parse_args():
                         help='use ema.')
     parser.add_argument('--learnable_pos', action='store_true', default=False,
                         help='learnable position embedding.')
+    parser.add_argument('--drop_path', type=float, default=0.1,
+                        help='drop_path')
     # Optimizer
     parser.add_argument('-opt', '--optimizer', type=str, default='adamw',
                         help='sgd, adam')

@@ -107,7 +107,7 @@ class VisionTransformer(nn.Module):
 
 
 # ------------------------ Model Functions ------------------------
-def vit_nano(img_size=224, patch_size=16, img_dim=3, num_classes=1000, learnable_pos=False):
+def vit_nano(img_size=224, patch_size=16, img_dim=3, num_classes=1000, dropout=0.1, learnable_pos=False):
     model = VisionTransformer(img_size      = img_size,
                               patch_size    = patch_size,
                               img_dim       = img_dim,
@@ -115,13 +115,13 @@ def vit_nano(img_size=224, patch_size=16, img_dim=3, num_classes=1000, learnable
                               num_layers    = 12,
                               num_heads     = 8,
                               mlp_ratio     = 4.0,
-                              dropout       = 0.1,
+                              dropout       = dropout,
                               num_classes   = num_classes,
                               learnable_pos = learnable_pos)
 
     return model
 
-def vit_tiny(img_size=224, patch_size=16, img_dim=3, num_classes=1000, learnable_pos=False):
+def vit_tiny(img_size=224, patch_size=16, img_dim=3, num_classes=1000, dropout=0.1, learnable_pos=False):
     model = VisionTransformer(img_size      = img_size,
                               patch_size    = patch_size,
                               img_dim       = img_dim,
@@ -129,13 +129,13 @@ def vit_tiny(img_size=224, patch_size=16, img_dim=3, num_classes=1000, learnable
                               num_layers    = 12,
                               num_heads     = 8,
                               mlp_ratio     = 4.0,
-                              dropout       = 0.1,
+                              dropout       = dropout,
                               num_classes   = num_classes,
                               learnable_pos = learnable_pos)
 
     return model
 
-def vit_base(img_size=224, patch_size=16, img_dim=3, num_classes=1000, learnable_pos=False):
+def vit_base(img_size=224, patch_size=16, img_dim=3, num_classes=1000, dropout=0.1, learnable_pos=False):
     model = VisionTransformer(img_size      = img_size,
                               patch_size    = patch_size,
                               img_dim       = img_dim,
@@ -143,13 +143,13 @@ def vit_base(img_size=224, patch_size=16, img_dim=3, num_classes=1000, learnable
                               num_layers    = 12,
                               num_heads     = 12,
                               mlp_ratio     = 4.0,
-                              dropout       = 0.1,
+                              dropout       = dropout,
                               num_classes   = num_classes,
                               learnable_pos = learnable_pos)
 
     return model
 
-def vit_large(img_size=224, patch_size=16, img_dim=3, num_classes=1000, learnable_pos=False):
+def vit_large(img_size=224, patch_size=16, img_dim=3, num_classes=1000, dropout=0.1, learnable_pos=False):
     model = VisionTransformer(img_size      = img_size,
                               patch_size    = patch_size,
                               img_dim       = img_dim,
@@ -157,13 +157,13 @@ def vit_large(img_size=224, patch_size=16, img_dim=3, num_classes=1000, learnabl
                               num_layers    = 24,
                               num_heads     = 16,
                               mlp_ratio     = 4.0,
-                              dropout       = 0.1,
+                              dropout       = dropout,
                               num_classes   = num_classes,
                               learnable_pos = learnable_pos)
 
     return model
 
-def vit_huge(img_size=224, patch_size=16, img_dim=3, num_classes=1000, learnable_pos=False):
+def vit_huge(img_size=224, patch_size=16, img_dim=3, num_classes=1000, dropout=0.1, learnable_pos=False):
     model = VisionTransformer(img_size      = img_size,
                               patch_size    = patch_size,
                               img_dim       = img_dim,
@@ -171,7 +171,7 @@ def vit_huge(img_size=224, patch_size=16, img_dim=3, num_classes=1000, learnable
                               num_layers    = 32,
                               num_heads     = 16,
                               mlp_ratio     = 4.0,
-                              dropout       = 0.1,
+                              dropout       = dropout,
                               num_classes   = num_classes,
                               learnable_pos = learnable_pos)
 

@@ -1,21 +1,33 @@
 # Model config
 MODEL="vit_tiny"
 MAE_PRETRAINED_MODEL="weights/cifar10/mae_vit_tiny/checkpoint-0.pth"
+if [ $MODEL == "vit_large" ]; then
+    MAX_EPOCH=50
+    WP_EPOCH=5
+    EVAL_EPOCH=5
+    LAYER_DECAY=0.75
+    DROP_PATH=0.2
+elif [ $MODEL == "vit_huge" ]; then
+    MAX_EPOCH=50
+    WP_EPOCH=5
+    EVAL_EPOCH=5
+    LAYER_DECAY=0.75
+    DROP_PATH=0.3
+else
+    MAX_EPOCH=100
+    WP_EPOCH=5
+    EVAL_EPOCH=5
+    LAYER_DECAY=0.65
+    DROP_PATH=0.1
 
 # Batch size
 BATCH_SIZE=256
-
-# Epoch config
-MAX_EPOCH=100
-WP_EPOCH=5
-EVAL_EPOCH=5
 
 # Optimizer config
 OPTIMIZER="adamw"
 BASE_LR=0.0005
 MIN_LR=1e-6
 WEIGHT_DECAY=0.05
-LAYER_DECAY=0.65
 
 # Dataset config
 DATASET="cifar10"
@@ -47,6 +59,7 @@ if [ $WORLD_SIZE == 1 ]; then
             --batch_size ${BATCH_SIZE} \
             --img_size ${IMG_SIZE} \
             --patch_size ${PATCH_SIZE} \
+            --drop_path ${DROP_PATH} \
             --max_epoch ${MAX_EPOCH} \
             --wp_epoch ${WP_EPOCH} \
             --eval_epoch ${EVAL_EPOCH} \
@@ -69,6 +82,7 @@ elif [[ $WORLD_SIZE -gt 1 && $WORLD_SIZE -le 8 ]]; then
             --batch_size ${BATCH_SIZE} \
             --img_size ${IMG_SIZE} \
             --patch_size ${PATCH_SIZE} \
+            --drop_path ${DROP_PATH} \
             --max_epoch ${MAX_EPOCH} \
             --wp_epoch ${WP_EPOCH} \
             --eval_epoch ${EVAL_EPOCH} \
