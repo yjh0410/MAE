@@ -57,7 +57,7 @@ def train_one_epoch(args,
         if ni % args.grad_accumulate == 0:
             optimizer.zero_grad()
 
-        if args.cuda:
+        if torch.cuda.is_available():
             torch.cuda.synchronize()
 
         # Logs
