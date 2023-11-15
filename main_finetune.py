@@ -149,6 +149,8 @@ def main():
     args.output_dir = path_to_save
     
     # ------------------------- Build DDP environment -------------------------
+    ## LOCAL_RANK is the global GPU number tag, the value range is [0, world_size - 1].
+    ## LOCAL_PROCESS_RANK is the number of the GPU of each machine, not global.
     local_rank = local_process_rank = -1
     print('World size: {}'.format(distributed_utils.get_world_size()))
     if args.distributed:
@@ -161,8 +163,10 @@ def main():
         except:
             # Single Mechine & Multiple GPUs (world size <= 8)
             local_rank = local_process_rank = torch.distributed.get_rank()
-
     print_rank_0(args, local_rank)
+    print("LOCAL RANK: ", local_rank)
+    print("LOCAL_PROCESS_RANL: ", local_process_rank)
+
     # ------------------------- Build CUDA -------------------------
     if args.cuda:
         cudnn.benchmark = True
@@ -192,7 +196,7 @@ def main():
     print('Train dataset size : ', len(train_dataset))
     print('Val dataset size   : ', len(val_dataset))
 
-    # ------------------------- Mixup config -------------------------
+    # ------------------------- Mixup augmentation config -------------------------
     mixup_fn = None
     mixup_active = args.mixup > 0 or args.cutmix > 0. or args.cutmix_minmax is not None
     if mixup_active:
@@ -254,7 +258,8 @@ def main():
     if args.eval:
         print('evaluating ...')
         test_stats = evaluate(val_dataloader, model, device, local_rank)
-        print('Eval Results: [loss: %.2f][acc1: %.2f]' % (test_stats['loss'], test_stats['acc1']), flush=True)
+        print('Eval Results: [loss: %.2f][acc1: %.2f][acc5 : %.2f]' %
+                (test_stats['loss'], test_stats['acc1'], test_stats['acc5']), flush=True)
         exit(0)
 
     # ------------------------- Training Pipeline -------------------------
