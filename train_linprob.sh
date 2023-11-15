@@ -1,20 +1,19 @@
 # Model config
 MODEL="vit_tiny"
+MAE_PRETRAINED_MODEL="weights/cifar10/mae_vit_tiny/checkpoint-0.pth"
 
 # Batch size
 BATCH_SIZE=256
 
 # Epoch config
-MAX_EPOCH=800
-WP_EPOCH=40
-EVAL_EPOCH=20
+MAX_EPOCH=100
+WP_EPOCH=5
+EVAL_EPOCH=5
 
 # Optimizer config
-OPTIMIZER="adamw"
-BASE_LR=0.0005
-MIN_LR=1e-6
+BASE_LR=0.1
+MIN_LR=0.0
 WEIGHT_DECAY=0.05
-LAYER_DECAY=0.65
 
 # Dataset config
 DATASET="cifar10"
@@ -49,10 +48,10 @@ if [ $WORLD_SIZE == 1 ]; then
             --max_epoch ${MAX_EPOCH} \
             --wp_epoch ${WP_EPOCH} \
             --eval_epoch ${EVAL_EPOCH} \
-            --optimizer ${OPTIMIZER} \
             --base_lr ${BASE_LR} \
             --min_lr ${MIN_LR} \
             --weight_decay ${WEIGHT_DECAY} \
+            --mae_pretrained ${MAE_PRETRAINED_MODEL} \
 elif [[ $WORLD_SIZE -gt 1 && $WORLD_SIZE -le 8 ]]; then
     python -m torch.distributed.run --nproc_per_node=${WORLD_SIZE} mae_finetune.py \
             --cuda \
@@ -66,10 +65,10 @@ elif [[ $WORLD_SIZE -gt 1 && $WORLD_SIZE -le 8 ]]; then
             --max_epoch ${MAX_EPOCH} \
             --wp_epoch ${WP_EPOCH} \
             --eval_epoch ${EVAL_EPOCH} \
-            --optimizer ${OPTIMIZER} \
             --base_lr ${BASE_LR} \
             --min_lr ${MIN_LR} \
             --weight_decay ${WEIGHT_DECAY} \
+            --mae_pretrained ${MAE_PRETRAINED_MODEL} \
 else
     echo "The WORLD_SIZE is set to a value greater than 8, indicating the use of multi-machine \
           multi-card training mode, which is currently unsupported."

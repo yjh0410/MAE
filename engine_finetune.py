@@ -17,9 +17,9 @@ def train_one_epoch(args,
                     lf,
                     loss_scaler,
                     criterion,
-                    mixup_fn=None,
                     local_rank=0,
-                    tblogger=None):
+                    tblogger=None,
+                    mixup_fn=None):
     model.train(True)
     metric_logger = MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', SmoothedValue(window_size=1, fmt='{value:.6f}'))

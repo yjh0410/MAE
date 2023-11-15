@@ -6,9 +6,9 @@ MAE_PRETRAINED_MODEL="weights/cifar10/mae_vit_tiny/checkpoint-0.pth"
 BATCH_SIZE=256
 
 # Epoch config
-MAX_EPOCH=800
-WP_EPOCH=40
-EVAL_EPOCH=20
+MAX_EPOCH=100
+WP_EPOCH=5
+EVAL_EPOCH=5
 
 # Optimizer config
 OPTIMIZER="adamw"
@@ -53,6 +53,7 @@ if [ $WORLD_SIZE == 1 ]; then
             --optimizer ${OPTIMIZER} \
             --base_lr ${BASE_LR} \
             --min_lr ${MIN_LR} \
+            --layer_decay ${LAYER_DECAY} \
             --weight_decay ${WEIGHT_DECAY} \
             --reprob 0.25 \
             --mixup 0.8 \
@@ -74,6 +75,7 @@ elif [[ $WORLD_SIZE -gt 1 && $WORLD_SIZE -le 8 ]]; then
             --optimizer ${OPTIMIZER} \
             --base_lr ${BASE_LR} \
             --min_lr ${MIN_LR} \
+            --layer_decay ${LAYER_DECAY} \
             --weight_decay ${WEIGHT_DECAY} \
             --reprob 0.25 \
             --mixup 0.8 \

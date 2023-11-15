@@ -5,12 +5,9 @@ import math
 import argparse
 import datetime
 
-# ---------------- Timm compoments ----------------
-from timm.data.mixup import Mixup
-from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
-
 # ---------------- Torch compoments ----------------
 import torch
+import torch.nn as nn
 import torch.optim as optim
 import torch.backends.cudnn as cudnn
 import torch.distributed as dist
@@ -26,8 +23,9 @@ from models import build_model
 from utils import lr_decay
 from utils import distributed_utils
 from utils.misc import setup_seed, print_rank_0, load_model, save_model
-from utils.com_flops_params import FLOPs_and_Params
 from utils.misc import NativeScalerWithGradNormCount as NativeScaler
+from utils.com_flops_params import FLOPs_and_Params
+from utils.lars import LARS
 
 # ---------------- Training engine ----------------
 from engine_finetune import train_one_epoch, evaluate
@@ -82,49 +80,16 @@ def parse_args():
     parser.add_argument('--learnable_pos', action='store_true', default=False,
                         help='learnable position embedding.')
     # Optimizer
-    parser.add_argument('-opt', '--optimizer', type=str, default='adamw',
-                        help='sgd, adam')
     parser.add_argument('-wd', '--weight_decay', type=float, default=0.05,
                         help='weight decay')
-    parser.add_argument('--base_lr', type=float, default=1e-3,
+    parser.add_argument('--base_lr', type=float, default=0.1,
                         help='learning rate for training model')
-    parser.add_argument('--min_lr', type=float, default=1e-6,
+    parser.add_argument('--min_lr', type=float, default=0.,
                         help='the final lr')
-    parser.add_argument('--layer_decay', type=float, default=0.75,
-                        help='layer-wise lr decay from ELECTRA/BEiT')
     parser.add_argument('-accu', '--grad_accumulate', type=int, default=1,
                         help='gradient accumulation')
     parser.add_argument('--max_grad_norm', type=float, default=None,
                         help='Clip gradient norm (default: None, no clipping)')
-    # Augmentation parameters
-    parser.add_argument('--color_jitter', type=float, default=None, metavar='PCT',
-                        help='Color jitter factor (enabled only when not using Auto/RandAug)')
-    parser.add_argument('--aa', type=str, default='rand-m9-mstd0.5-inc1', metavar='NAME',
-                        help='Use AutoAugment policy. "v0" or "original". " + "(default: rand-m9-mstd0.5-inc1)'),
-    parser.add_argument('--smoothing', type=float, default=0.1,
-                        help='Label smoothing (default: 0.1)')
-    # Random Erase params
-    parser.add_argument('--reprob', type=float, default=0.25, metavar='PCT',
-                        help='Random erase prob (default: 0.25)')
-    parser.add_argument('--remode', type=str, default='pixel',
-                        help='Random erase mode (default: "pixel")')
-    parser.add_argument('--recount', type=int, default=1,
-                        help='Random erase count (default: 1)')
-    parser.add_argument('--resplit', action='store_true', default=False,
-                        help='Do not random erase first (clean) augmentation split')
-    # Mixup params
-    parser.add_argument('--mixup', type=float, default=0,
-                        help='mixup alpha, mixup enabled if > 0.')
-    parser.add_argument('--cutmix', type=float, default=0,
-                        help='cutmix alpha, cutmix enabled if > 0.')
-    parser.add_argument('--cutmix_minmax', type=float, nargs='+', default=None,
-                        help='cutmix min/max ratio, overrides alpha and enables cutmix if set (default: None)')
-    parser.add_argument('--mixup_prob', type=float, default=1.0,
-                        help='Probability of performing mixup or cutmix when either/both is enabled')
-    parser.add_argument('--mixup_switch_prob', type=float, default=0.5,
-                        help='Probability of switching to cutmix when both mixup and cutmix enabled')
-    parser.add_argument('--mixup_mode', type=str, default='batch',
-                        help='How to apply mixup/cutmix params. Per "batch", "pair", or "elem"')
     # DDP
     parser.add_argument('-dist', '--distributed', action='store_true', default=False,
                         help='distributed training')
@@ -196,22 +161,11 @@ def main():
     print('Train dataset size : ', len(train_dataset))
     print('Val dataset size   : ', len(val_dataset))
 
-    # ------------------------- Mixup augmentation config -------------------------
-    mixup_fn = None
-    mixup_active = args.mixup > 0 or args.cutmix > 0. or args.cutmix_minmax is not None
-    if mixup_active:
-        print_rank_0("Mixup is activated!", local_rank)
-        mixup_fn = Mixup(mixup_alpha     = args.mixup,
-                         cutmix_alpha    = args.cutmix,
-                         cutmix_minmax   = args.cutmix_minmax,
-                         prob            = args.mixup_prob,
-                         switch_prob     = args.mixup_switch_prob,
-                         mode            = args.mixup_mode,
-                         label_smoothing = args.smoothing,
-                         num_classes     = args.num_classes)
-
     # ------------------------- Build Model -------------------------
     model = build_model(args)
+    model.classifier = torch.nn.Sequential(
+        nn.BatchNorm1d(model.classifier.in_features, affine=False, eps=1e-6),
+        model.classifier)
     model.train().to(device)
     print(model)
     if local_rank <= 0:
@@ -235,8 +189,7 @@ def main():
     args.base_lr = args.base_lr / 256 * args.batch_size * args.grad_accumulate    # auto scale lr
     args.min_lr  = args.min_lr  / 256 * args.batch_size * args.grad_accumulate    # auto scale lr
     ## optimizer
-    param_groups = lr_decay.param_groups_lrd(model_without_ddp, args.weight_decay, model_without_ddp.no_weight_decay(), args.layer_decay)
-    optimizer = torch.optim.AdamW(param_groups, lr=args.base_lr)
+    optimizer = LARS(model_without_ddp.classifier.parameters(), lr=args.base_lr, weight_decay=args.weight_decay)
     ## loss scaler
     loss_scaler = NativeScaler()
 
@@ -245,13 +198,7 @@ def main():
     lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
 
     # ------------------------- Build Criterion -------------------------
-    if mixup_fn is not None:
-        # smoothing is handled with mixup label transform
-        criterion = SoftTargetCrossEntropy()
-    elif args.smoothing > 0.:
-        criterion = LabelSmoothingCrossEntropy(smoothing=args.smoothing)
-    else:
-        criterion = torch.nn.CrossEntropyLoss()
+    criterion = torch.nn.CrossEntropyLoss()
     load_model(args=args, model_without_ddp=model_without_ddp, optimizer=optimizer, loss_scaler=loss_scaler)
 
     # ------------------------- Eval before Train Pipeline -------------------------
@@ -271,7 +218,7 @@ def main():
         if args.distributed:
             train_dataloader.batch_sampler.sampler.set_epoch(epoch)
         train_stats = train_one_epoch(args, device, model, train_dataloader, optimizer, epoch,
-                                      lf, loss_scaler, criterion, mixup_fn, local_rank, tblogger)
+                                      lf, loss_scaler, criterion, local_rank, tblogger)
 
         # LR scheduler
         lr_scheduler.step()
