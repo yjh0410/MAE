@@ -37,7 +37,7 @@ fi
 # ------------------- Training pipeline -------------------
 WORLD_SIZE=1
 if [ $WORLD_SIZE == 1 ]; then
-    python train_linprobe.py \
+    python main_linprobe.py \
             --cuda \
             --root ${ROOT} \
             --dataset ${DATASET} \
@@ -53,7 +53,7 @@ if [ $WORLD_SIZE == 1 ]; then
             --weight_decay ${WEIGHT_DECAY} \
             --mae_pretrained ${MAE_PRETRAINED_MODEL}
 elif [[ $WORLD_SIZE -gt 1 && $WORLD_SIZE -le 8 ]]; then
-    python -m torch.distributed.run --nproc_per_node=${WORLD_SIZE} train_linprobe.py \
+    python -m torch.distributed.run --nproc_per_node=${WORLD_SIZE} main_linprobe.py \
             --cuda \
             --dist \
             --root ${ROOT} \

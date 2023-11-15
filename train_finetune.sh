@@ -52,7 +52,7 @@ fi
 # ------------------- Training pipeline -------------------
 WORLD_SIZE=1
 if [ $WORLD_SIZE == 1 ]; then
-    python train_finetune.py \
+    python main_finetune.py \
             --cuda \
             --root ${ROOT} \
             --dataset ${DATASET} \
@@ -74,7 +74,7 @@ if [ $WORLD_SIZE == 1 ]; then
             --cutmix 1.0 \
             --mae_pretrained ${MAE_PRETRAINED_MODEL}
 elif [[ $WORLD_SIZE -gt 1 && $WORLD_SIZE -le 8 ]]; then
-    python -m torch.distributed.run --nproc_per_node=${WORLD_SIZE} train_finetune.py \
+    python -m torch.distributed.run --nproc_per_node=${WORLD_SIZE} main_finetune.py \
             --cuda \
             --dist \
             --root ${ROOT} \
