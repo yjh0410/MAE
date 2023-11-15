@@ -175,6 +175,8 @@ def main():
             cudnn.benchmark = True
             device = torch.device("cuda")
         else:
+            print('There is no available GPU.')
+            args.cuda = False
             device = torch.device("cpu")
     else:
         device = torch.device("cpu")
