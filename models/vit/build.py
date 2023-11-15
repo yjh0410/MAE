@@ -21,7 +21,7 @@ def build_vit(args):
         model = vit_huge(args.img_size, args.patch_size, args.img_dim, args.num_classes, args.drop_path, args.learnable_pos)
     
     # load pretrained
-    if args.mae_pretrained is not None:
+    if args.mae_pretrained:
         ## TODO:
         print('Loading MAE pretrained from <{}> for <{}> ...'.format('mae_'+args.model, args.model))
         checkpoint = torch.load(args.mae_pretrained, map_location='cpu')
