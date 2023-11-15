@@ -1,24 +1,25 @@
 # Model config
 MODEL="vit_tiny"
 MAE_PRETRAINED_MODEL="weights/cifar10/mae_vit_tiny/checkpoint-0.pth"
-if [ $MODEL == "vit_large" ]; then
-    MAX_EPOCH=50
-    WP_EPOCH=5
-    EVAL_EPOCH=5
-    LAYER_DECAY=0.75
-    DROP_PATH=0.2
-elif [ $MODEL == "vit_huge" ]; then
+if [ $MODEL == "vit_huge" ]; then
     MAX_EPOCH=50
     WP_EPOCH=5
     EVAL_EPOCH=5
     LAYER_DECAY=0.75
     DROP_PATH=0.3
+elif [ $MODEL == "vit_large" ]; then
+    MAX_EPOCH=50
+    WP_EPOCH=5
+    EVAL_EPOCH=5
+    LAYER_DECAY=0.75
+    DROP_PATH=0.2
 else
     MAX_EPOCH=100
     WP_EPOCH=5
     EVAL_EPOCH=5
     LAYER_DECAY=0.65
     DROP_PATH=0.1
+fi
 
 # Batch size
 BATCH_SIZE=256
