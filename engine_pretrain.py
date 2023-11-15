@@ -1,6 +1,8 @@
+import sys
 import math
 import numpy as np
 import torch
+
 from utils.misc import MetricLogger, SmoothedValue
 from utils.misc import mae_loss, print_rank_0, all_reduce_mean
 
@@ -68,7 +70,7 @@ def train_one_epoch(args,
             """ We use epoch_1000x as the x-axis in tensorboard.
             This calibrates different curves when batch size changes.
             """
-            epoch_1000x = int((data_iter_step / len(data_loader) + epoch) * 1000)
+            epoch_1000x = int((iter_i / len(data_loader) + epoch) * 1000)
             tblogger.add_scalar('train_loss', loss_value_reduce, epoch_1000x)
             tblogger.add_scalar('lr', lr, epoch_1000x)
 
