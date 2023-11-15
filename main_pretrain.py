@@ -131,13 +131,14 @@ def main():
     print_rank_0(args, local_rank)
     # ------------------------- Build CUDA -------------------------
     if args.cuda:
-        try:
+        if torch.cuda.is_available():
             cudnn.benchmark = True
             device = torch.device("cuda")
-        except:
+        else:
             device = torch.device("cpu")
     else:
         device = torch.device("cpu")
+
 
     # ------------------------- Build Tensorboard -------------------------
     tblogger = None
