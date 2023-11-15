@@ -19,7 +19,7 @@ class VisionTransformer(nn.Module):
                  num_heads   :int    = 12,
                  qkv_bias    :bool   = True,
                  mlp_ratio   :float  = 4.0,
-                 dropout     :float  = 0.1,
+                 dropout     :float  = 0.,
                  num_classes :int    = 1000,
                  learnable_pos :bool = True):
         super().__init__()
@@ -107,7 +107,7 @@ class VisionTransformer(nn.Module):
 
 
 # ------------------------ Model Functions ------------------------
-def vit_nano(img_size=224, patch_size=16, img_dim=3, num_classes=1000, dropout=0.1, learnable_pos=False):
+def vit_nano(img_size=224, patch_size=16, img_dim=3, num_classes=1000, dropout=0., learnable_pos=False):
     model = VisionTransformer(img_size      = img_size,
                               patch_size    = patch_size,
                               img_dim       = img_dim,
@@ -121,7 +121,7 @@ def vit_nano(img_size=224, patch_size=16, img_dim=3, num_classes=1000, dropout=0
 
     return model
 
-def vit_tiny(img_size=224, patch_size=16, img_dim=3, num_classes=1000, dropout=0.1, learnable_pos=False):
+def vit_tiny(img_size=224, patch_size=16, img_dim=3, num_classes=1000, dropout=0., learnable_pos=False):
     model = VisionTransformer(img_size      = img_size,
                               patch_size    = patch_size,
                               img_dim       = img_dim,
@@ -135,7 +135,7 @@ def vit_tiny(img_size=224, patch_size=16, img_dim=3, num_classes=1000, dropout=0
 
     return model
 
-def vit_base(img_size=224, patch_size=16, img_dim=3, num_classes=1000, dropout=0.1, learnable_pos=False):
+def vit_base(img_size=224, patch_size=16, img_dim=3, num_classes=1000, dropout=0., learnable_pos=False):
     model = VisionTransformer(img_size      = img_size,
                               patch_size    = patch_size,
                               img_dim       = img_dim,
@@ -149,7 +149,7 @@ def vit_base(img_size=224, patch_size=16, img_dim=3, num_classes=1000, dropout=0
 
     return model
 
-def vit_large(img_size=224, patch_size=16, img_dim=3, num_classes=1000, dropout=0.1, learnable_pos=False):
+def vit_large(img_size=224, patch_size=16, img_dim=3, num_classes=1000, dropout=0., learnable_pos=False):
     model = VisionTransformer(img_size      = img_size,
                               patch_size    = patch_size,
                               img_dim       = img_dim,
@@ -163,7 +163,7 @@ def vit_large(img_size=224, patch_size=16, img_dim=3, num_classes=1000, dropout=
 
     return model
 
-def vit_huge(img_size=224, patch_size=16, img_dim=3, num_classes=1000, dropout=0.1, learnable_pos=False):
+def vit_huge(img_size=224, patch_size=16, img_dim=3, num_classes=1000, dropout=0., learnable_pos=False):
     model = VisionTransformer(img_size      = img_size,
                               patch_size    = patch_size,
                               img_dim       = img_dim,

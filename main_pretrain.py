@@ -77,6 +77,8 @@ def parse_args():
                         help='model name')
     parser.add_argument('--resume', default=None, type=str,
                         help='keep training')
+    parser.add_argument('--drop_path', type=float, default=0.,
+                        help='drop_path')
     # Optimizer
     parser.add_argument('-opt', '--optimizer', type=str, default='adamw',
                         help='sgd, adam')
