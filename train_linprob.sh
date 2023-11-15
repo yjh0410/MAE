@@ -37,7 +37,7 @@ fi
 # ------------------- Training pipeline -------------------
 WORLD_SIZE=1
 if [ $WORLD_SIZE == 1 ]; then
-    python mae_finetune.py \
+    python train_linprobe.py \
             --cuda \
             --root ${ROOT} \
             --dataset ${DATASET} \
@@ -51,9 +51,9 @@ if [ $WORLD_SIZE == 1 ]; then
             --base_lr ${BASE_LR} \
             --min_lr ${MIN_LR} \
             --weight_decay ${WEIGHT_DECAY} \
-            --mae_pretrained ${MAE_PRETRAINED_MODEL} \
+            --mae_pretrained ${MAE_PRETRAINED_MODEL}
 elif [[ $WORLD_SIZE -gt 1 && $WORLD_SIZE -le 8 ]]; then
-    python -m torch.distributed.run --nproc_per_node=${WORLD_SIZE} mae_finetune.py \
+    python -m torch.distributed.run --nproc_per_node=${WORLD_SIZE} train_linprobe.py \
             --cuda \
             --dist \
             --root ${ROOT} \
@@ -68,7 +68,7 @@ elif [[ $WORLD_SIZE -gt 1 && $WORLD_SIZE -le 8 ]]; then
             --base_lr ${BASE_LR} \
             --min_lr ${MIN_LR} \
             --weight_decay ${WEIGHT_DECAY} \
-            --mae_pretrained ${MAE_PRETRAINED_MODEL} \
+            --mae_pretrained ${MAE_PRETRAINED_MODEL}
 else
     echo "The WORLD_SIZE is set to a value greater than 8, indicating the use of multi-machine \
           multi-card training mode, which is currently unsupported."
