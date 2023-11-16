@@ -9,3 +9,7 @@ __pycache__
 data/cifar/
 vis_results/
 cifar_data/
+pai_pretrain.sh
+pai_finetune.sh
+pai_linprobe.sh
+odps_config.ini
