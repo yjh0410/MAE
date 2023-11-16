@@ -60,7 +60,7 @@ if [ $WORLD_SIZE == 1 ]; then
 elif [[ $WORLD_SIZE -gt 1 && $WORLD_SIZE -le 8 ]]; then
     python -m torch.distributed.run --nproc_per_node=${WORLD_SIZE} main_pretrain.py \
             --cuda \
-            --dist \
+            -dist \
             --root ${ROOT} \
             --dataset ${DATASET} \
             -m ${MODEL} \
