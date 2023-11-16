@@ -58,7 +58,7 @@ if [ $WORLD_SIZE == 1 ]; then
             --weight_decay ${WEIGHT_DECAY} \
             --mask_ratio ${MASK_RATIO}
 elif [[ $WORLD_SIZE -gt 1 && $WORLD_SIZE -le 8 ]]; then
-    python -m torch.distributed.run --nproc_per_node=${WORLD_SIZE} main_pretrain.py \
+    python -m torch.distributed.run --nproc_per_node=${WORLD_SIZE} --master_port 1668 main_pretrain.py \
             --cuda \
             -dist \
             --root ${ROOT} \
