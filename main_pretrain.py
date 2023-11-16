@@ -104,8 +104,6 @@ def parse_args():
                         help='number of distributed processes')
     parser.add_argument('--local_rank', default=-1, type=int,
                         help='the number of local rank.')
-    parser.add_argument('--local_rank', default=-1, type=int,
-                        help='the number of local rank.')
 
     return parser.parse_args()
 
