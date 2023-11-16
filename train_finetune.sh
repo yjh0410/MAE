@@ -74,9 +74,9 @@ if [ $WORLD_SIZE == 1 ]; then
             --cutmix 1.0 \
             --mae_pretrained ${MAE_PRETRAINED_MODEL}
 elif [[ $WORLD_SIZE -gt 1 && $WORLD_SIZE -le 8 ]]; then
-    python -m torch.distributed.run --nproc_per_node=${WORLD_SIZE} main_finetune.py \
+    python -m torch.distributed.run --nproc_per_node=${WORLD_SIZE} --master_port 1668 main_finetune.py \
             --cuda \
-            --dist \
+            -dist \
             --root ${ROOT} \
             --dataset ${DATASET} \
             -m ${MODEL} \

@@ -53,9 +53,9 @@ if [ $WORLD_SIZE == 1 ]; then
             --weight_decay ${WEIGHT_DECAY} \
             --mae_pretrained ${MAE_PRETRAINED_MODEL}
 elif [[ $WORLD_SIZE -gt 1 && $WORLD_SIZE -le 8 ]]; then
-    python -m torch.distributed.run --nproc_per_node=${WORLD_SIZE} main_linprobe.py \
+    python -m torch.distributed.run --nproc_per_node=${WORLD_SIZE} --master_port 1668 main_linprobe.py \
             --cuda \
-            --dist \
+            -dist \
             --root ${ROOT} \
             --dataset ${DATASET} \
             -m ${MODEL} \
