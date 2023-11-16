@@ -12,4 +12,7 @@ cifar_data/
 pai_pretrain.sh
 pai_finetune.sh
 pai_linprobe.sh
+pai_pretrain.py
+pai_finetune.py
+pai_linprobe.py
 odps_config.ini
