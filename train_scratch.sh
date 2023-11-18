@@ -1,26 +1,24 @@
+# Note that the configuration in this script accessory are not fully aligned with the official configuration.
+
 # Model config
 MODEL="vit_tiny"
-MAE_PRETRAINED_MODEL="weights/cifar10/mae_vit_tiny/checkpoint-799.pth"
 if [ $MODEL == "vit_huge" ]; then
-    MAX_EPOCH=50
-    WP_EPOCH=5
+    MAX_EPOCH=200
+    WP_EPOCH=20
     EVAL_EPOCH=5
-    BASE_LR=0.001
-    LAYER_DECAY=0.75
-    DROP_PATH=0.3
+    LAYER_DECAY=1.0
+    DROP_PATH=0.2
 elif [ $MODEL == "vit_large" ]; then
-    MAX_EPOCH=50
-    WP_EPOCH=5
+    MAX_EPOCH=200
+    WP_EPOCH=20
     EVAL_EPOCH=5
-    BASE_LR=0.001
-    LAYER_DECAY=0.75
+    LAYER_DECAY=1.0
     DROP_PATH=0.2
 else
-    MAX_EPOCH=100
-    WP_EPOCH=5
+    MAX_EPOCH=300
+    WP_EPOCH=20
     EVAL_EPOCH=5
-    BASE_LR=0.0005
-    LAYER_DECAY=0.65
+    LAYER_DECAY=1.0
     DROP_PATH=0.1
 fi
 
@@ -29,7 +27,8 @@ BATCH_SIZE=256
 
 # Optimizer config
 OPTIMIZER="adamw"
-WEIGHT_DECAY=0.05
+BASE_LR=0.0001
+WEIGHT_DECAY=0.3
 
 # Dataset config
 DATASET="cifar10"

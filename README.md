@@ -3,43 +3,25 @@
 
 Due to limited resources, I only test my randomly designed `ViT-Nano` on the `CIFAR10` dataset. It is not my goal to reproduce MAE perfectly, but my implementation is aligned with the official MAE as much as possible so that users can learn `MAE` quickly and accurately.
 
-## 1. MAE pretrain
-- Train `MAE-ViT-Nano` on CIFAR10 dataset:
+## 1. Pretrain
+We have kindly provided the bash script `train_pretrain.sh` file for your training. You can modify some hyperparameters in the script file according to your own needs.
 
 ```Shell
-python train_pretrain.py --dataset cifar10 -m mae_vit_nano --batch_size 256 --img_size 32 --patch_size 2 --max_epoch 400 --wp_epoch 40
+bash train_pretrain.sh
 ```
 
-- Train `MAE-ViT-Nano` on ImageNet dataset:
+## 2. Finetune
+We have kindly provided the bash script `train_finetune.sh` file for your training. You can modify some hyperparameters in the script file according to your own needs.
 
 ```Shell
-python train_pretrain.py --dataset imagenet_1k -m mae_vit_nano --batch_size 256 --img_size 224 --patch_size 16 --max_epoch 400 --wp_epoch 40
+bash train_finetune.sh
 ```
 
-## 2. Train from scratch
-- Train `ViT-Nano` on CIFAR10 dataset:
+## 2. Scratch
+We have kindly provided the bash script `train_scratch.sh` file for your training. You can modify some hyperparameters in the script file according to your own needs.
 
 ```Shell
-python train_finetune.py --dataset cifar10 -m vit_nano --batch_size 256 --img_size 32 --patch_size 2 --max_epoch 200 --wp_epoch 20
-```
-
-- Train `ViT-Nano` on ImageNet dataset:
-
-```Shell
-python train_finetune.py --dataset imagenet_1k -m vit_nano --batch_size 256 --img_size 224 --patch_size 16 --max_epoch 200 --wp_epoch 20
-```
-
-## 3. Train from MAE pretrained
-- Train `ViT-Nano` on CIFAR10 dataset:
-
-```Shell
-python train_finetune.py --dataset cifar10 -m vit_nano --batch_size 256 --img_size 32 --patch_size 2  --max_epoch 50 --wp_epoch 5 --mae_pretrained path/to/mae_vit_nano_cifar10.pth
-```
-
-- Train `ViT-Nano` on ImageNet dataset:
-
-```Shell
-python train_finetune.py --dataset imagenet_1k -m vit_nano --batch_size 256 --img_size 224 --patch_size 16 --max_epoch 50 --wp_epoch 5 --mae_pretrained path/to/mae_vit_nano_imagenet_1k.pth
+bash train_scratch.sh
 ```
 
 ## 4. Evaluate 
