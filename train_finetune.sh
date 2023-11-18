@@ -1,6 +1,6 @@
 # Model config
 MODEL="vit_tiny"
-MAE_PRETRAINED_MODEL="weights/cifar10/mae_vit_tiny/checkpoint-0.pth"
+MAE_PRETRAINED_MODEL="weights/cifar10/mae_vit_tiny/checkpoint-799.pth"
 if [ $MODEL == "vit_huge" ]; then
     MAX_EPOCH=50
     WP_EPOCH=5
