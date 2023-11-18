@@ -73,6 +73,8 @@ def parse_args():
     # Model
     parser.add_argument('-m', '--model', type=str, default='vit_tiny',
                         help='model name')
+    parser.add_argument('--mae_pretrained', default=None, type=str,
+                        help='load MAE pretrained weight.')
     parser.add_argument('--resume', default=None, type=str,
                         help='keep training')
     parser.add_argument('--ema', action='store_true', default=False,

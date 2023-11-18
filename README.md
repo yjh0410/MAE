@@ -4,21 +4,21 @@
 Due to limited resources, I only test my randomly designed `ViT-Nano` on the `CIFAR10` dataset. It is not my goal to reproduce MAE perfectly, but my implementation is aligned with the official MAE as much as possible so that users can learn `MAE` quickly and accurately.
 
 ## 1. Pretrain
-We have kindly provided the bash script `train_pretrain.sh` file for your training. You can modify some hyperparameters in the script file according to your own needs.
+We have kindly provided the bash script `train_pretrain.sh` file for pretraining. You can modify some hyperparameters in the script file according to your own needs.
 
 ```Shell
 bash train_pretrain.sh
 ```
 
 ## 2. Finetune
-We have kindly provided the bash script `train_finetune.sh` file for your training. You can modify some hyperparameters in the script file according to your own needs.
+We have kindly provided the bash script `train_finetune.sh` file for finetuning. You can modify some hyperparameters in the script file according to your own needs.
 
 ```Shell
 bash train_finetune.sh
 ```
 
-## 2. Scratch
-We have kindly provided the bash script `train_scratch.sh` file for your training. You can modify some hyperparameters in the script file according to your own needs.
+## 3. Scratch
+We have kindly provided the bash script `train_scratch.sh` file for training from scratch. You can modify some hyperparameters in the script file according to your own needs.
 
 ```Shell
 bash train_scratch.sh

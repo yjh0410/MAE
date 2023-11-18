@@ -29,6 +29,7 @@ BATCH_SIZE=256
 
 # Optimizer config
 OPTIMIZER="adamw"
+MIN_LR=1e-6
 WEIGHT_DECAY=0.05
 
 # Dataset config
