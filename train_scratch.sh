@@ -38,7 +38,7 @@ if [[ $DATASET == "cifar10" || $DATASET == "cifar100" ]]; then
     ROOT="none"
     # Image config
     IMG_SIZE=32
-    PATCH_SIZE=16
+    PATCH_SIZE=2
 elif [[ $DATASET == "imagenet_1k" || $DATASET == "imagenet_22k" ]]; then
     # Data root
     ROOT="path/to/imagenet"
