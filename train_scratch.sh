@@ -5,19 +5,19 @@ MODEL="vit_tiny"
 if [ $MODEL == "vit_huge" ]; then
     MAX_EPOCH=200
     WP_EPOCH=20
-    EVAL_EPOCH=5
+    EVAL_EPOCH=10
     LAYER_DECAY=1.0
     DROP_PATH=0.2
 elif [ $MODEL == "vit_large" ]; then
     MAX_EPOCH=200
     WP_EPOCH=20
-    EVAL_EPOCH=5
+    EVAL_EPOCH=10
     LAYER_DECAY=1.0
     DROP_PATH=0.2
 else
     MAX_EPOCH=300
     WP_EPOCH=20
-    EVAL_EPOCH=5
+    EVAL_EPOCH=10
     LAYER_DECAY=1.0
     DROP_PATH=0.1
 fi
