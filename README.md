@@ -1,7 +1,7 @@
 # MAE
 **PyTorch implementation of Masked AutoEncoder**
 
-Due to limited resources, I only test my randomly designed `ViT-Nano` on the `CIFAR10` dataset. It is not my goal to reproduce MAE perfectly, but my implementation is aligned with the official MAE as much as possible so that users can learn `MAE` quickly and accurately.
+Due to limited resources, I only test my randomly designed `ViT-Tiny` on the `CIFAR10` dataset. It is not my goal to reproduce MAE perfectly, but my implementation is aligned with the official MAE as much as possible so that users can learn `MAE` quickly and accurately.
 
 ## 1. Pretrain
 We have kindly provided the bash script `train_pretrain.sh` file for pretraining. You can modify some hyperparameters in the script file according to your own needs.
@@ -25,26 +25,26 @@ bash train_scratch.sh
 ```
 
 ## 4. Evaluate 
-- Evaluate the `top1 & top5` accuracy of `ViT-Nano` on CIFAR10 dataset:
+- Evaluate the `top1 & top5` accuracy of `ViT-Tiny` on CIFAR10 dataset:
 ```Shell
-python train_finetune.py --dataset cifar10 -m vit_nano --batch_size 256 --img_size 32 --patch_size 2 --eval --resume path/to/vit_nano_cifar10.pth
+python train_finetune.py --dataset cifar10 -m vit_tiny --batch_size 256 --img_size 32 --patch_size 2 --eval --resume path/to/vit_tiny_cifar10.pth
 ```
 
-- Evaluate the `top1 & top5` accuracy of `ViT-Nano` on ImageNet-1K dataset:
+- Evaluate the `top1 & top5` accuracy of `ViT-Tiny` on ImageNet-1K dataset:
 ```Shell
-python train_finetune.py --dataset imagenet_1k -m vit_nano --batch_size 256 --img_size 224 --patch_size 16 --eval --resume path/to/vit_nano_imagenet_1k.pth
+python train_finetune.py --dataset imagenet_1k -m vit_tiny --batch_size 256 --img_size 224 --patch_size 16 --eval --resume path/to/vit_tiny_imagenet_1k.pth
 ```
 
 
 ## 5. Visualize Image Reconstruction
-- Evaluate `MAE-ViT-Nano` on CIFAR10 dataset:
+- Evaluate `MAE-ViT-Tiny` on CIFAR10 dataset:
 ```Shell
-python train_pretrain.py --dataset cifar10 -m mae_vit_nano --resume path/to/mae_vit_nano_cifar10.pth --img_size 32 --patch_size 2 --eval --batch_size 1
+python train_pretrain.py --dataset cifar10 -m mae_vit_tiny --resume path/to/mae_vit_tiny_cifar10.pth --img_size 32 --patch_size 2 --eval --batch_size 1
 ```
 
-- Evaluate `MAE-ViT-Nano` on ImageNet-1K dataset:
+- Evaluate `MAE-ViT-Tiny` on ImageNet-1K dataset:
 ```Shell
-python train_pretrain.py --dataset imagenet_1k -m mae_vit_nano --resume path/to/mae_vit_nano_imagenet_1k.pth --img_size 224 --patch_size 16 --eval --batch_size 1
+python train_pretrain.py --dataset imagenet_1k -m mae_vit_tiny --resume path/to/mae_vit_tiny_imagenet_1k.pth --img_size 224 --patch_size 16 --eval --batch_size 1
 ```
 
 
@@ -69,7 +69,6 @@ Masked Image | Original Image | Reconstructed Image
 | ViT-Tiny |        No        | 300   | 86.8      | [ckpt](https://github.com/yjh0410/MAE/releases/download/checkpoints/vit-tiny-scratch-299-Acc1-86.79.pth) | - |
 | ViT-Tiny |        Yes       | 100   | **91.8**  | [ckpt](https://github.com/yjh0410/MAE/releases/download/checkpoints/vit-tiny-finetune-99-Acc1-91.78.pth) | [ckpt](https://github.com/yjh0410/MAE/releases/download/checkpoints/vit-tiny-pretrained-799.pth)
 
-Since CIFAR10 is a very small scale dataset, we recommend increasing the epoch can make the model achieve better performance, especially when we use a larger model, such as `ViT-Base`. 
 
 - On ImageNet-1K
 
