@@ -299,7 +299,7 @@ def unpatchify(x, patch_size):
 def mae_loss(imgs, pred, mask, patch_size, norm_pix_loss=False):
     """
     imgs: [B, 3, H, W]
-    pred: [B, N, p*p*3]
+    pred: [B, N, C], C = p*p*3
     mask: [B, N], 0 is keep, 1 is remove, 
     """
     target = patchify(imgs, patch_size)
