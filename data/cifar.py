@@ -95,11 +95,10 @@ if __name__ == "__main__":
         # ----------------- Step-1: Patch embed -----------------
         # Patchify: [B, C, H, W] -> [B, N, C*P*P]
         H, W = x.shape[2:]
+        Hp, Wp = H // mask_patch_size, W // mask_patch_size
         patches = patchify(x, mask_patch_size)
         B, N, C = patches.shape
-        Hp, Wp = H // mask_patch_size, W // mask_patch_size
 
-        
         # ----------------- Step-2: Random masking -----------------
         len_keep = int(N * (1 - mask_ratio))
         noise = torch.rand(B, N, device=x.device)  # noise in [0, 1]
@@ -114,7 +113,7 @@ if __name__ == "__main__":
         # [B, N_nomask, 3*P*P]
         keep_patches = torch.gather(patches, dim=1, index=ids_keep.unsqueeze(-1).repeat(1, 1, C))
 
-        # [B, N, 3*P*P]
+        # unshuffle to get the masked image [B, N, 3*P*P]
         mask_patches = torch.zeros(B, N-len_keep, C)
         x_masked = torch.cat([keep_patches, mask_patches], dim=1)
         x_masked = torch.gather(x_masked, dim=1, index=ids_restore.unsqueeze(-1).repeat(1, 1, C))
@@ -123,13 +122,12 @@ if __name__ == "__main__":
         mask = torch.ones([B, N], device=x.device)
         mask[:, :len_keep] = 0
 
-        # unshuffle to get th binary mask
+        # unshuffle to get the binary mask
         mask = torch.gather(mask, dim=1, index=ids_restore)
 
         # ----------------- Step-3: Reshape masked patches to image format -----------------
         x_masked = unpatchify(x_masked, mask_patch_size)
         mask = mask.view(B, Hp, Wp)
-
 
         return x_masked, mask
   
