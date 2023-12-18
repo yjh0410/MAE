@@ -5,7 +5,6 @@ import torch
 
 from utils.misc import MetricLogger, SmoothedValue
 from utils.misc import print_rank_0, all_reduce_mean
-from utils.misc import mae_loss, sim_mae_loss
 
 def train_one_epoch(args,
                     device,
@@ -41,13 +40,7 @@ def train_one_epoch(args,
         with torch.cuda.amp.autocast():
             ## forward
             output = model(images)
-            ## compute loss
-            if args.loss_type == "mae":
-                loss = mae_loss(images, output['x_pred'], output['mask'], args.patch_size, args.norm_pix_loss)
-            elif args.loss_type == "sim_mae":
-                loss = sim_mae_loss(images, output['x_pred'], output['mask'], args.norm_pix_loss)
-            else:
-                raise NotImplementedError("Unkown loss type for MIM pretraining.")
+            loss = output["loss"]
 
         # Check loss
         loss_value = loss.item()

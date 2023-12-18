@@ -24,7 +24,7 @@ from models import build_model
 from utils import distributed_utils
 from utils.misc import setup_seed, modify_optimizer
 from utils.misc import load_model, save_model
-from utils.misc import unpatchify, mae_loss, print_rank_0
+from utils.misc import unpatchify, print_rank_0
 from utils.misc import NativeScalerWithGradNormCount as NativeScaler
 from utils.com_flops_params import FLOPs_and_Params
 
@@ -177,7 +177,7 @@ def main():
     print_rank_0('Train dataset size : {}'.format(len(train_dataset)), local_rank)
 
     # ------------------------- Build Model -------------------------
-    model = build_model(args)
+    model = build_model(args, is_train=True)
     model.train().to(device)
     if local_rank <= 0:
         model_copy = deepcopy(model)
@@ -259,8 +259,6 @@ def visualize(args, device, model):
             target = target.to(device, non_blocking=True)
             # inference
             output = model(images)
-            # loss
-            loss = mae_loss(images, output['x_pred'], output['mask'], patch_size, model.norm_pix_loss)
 
             # denormalize input image
             org_img = images[0].permute(1, 2, 0).cpu().numpy()
@@ -284,7 +282,6 @@ def visualize(args, device, model):
             # visualize
             vis_image = np.concatenate([masked_img, org_img, pred_img], axis=1)
             vis_image = vis_image[..., (2, 1, 0)]
-            print("[{}]/[{}] | Label: {} | Loss: {:.4f} ".format(i, len(val_dataloader), int(target[0]), loss.item()))
             cv2.imshow('masked | origin | reconstruct ', vis_image)
             cv2.waitKey(0)
 

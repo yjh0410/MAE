@@ -55,17 +55,17 @@ def build_vit(args):
 # ------------------------ MAE Vision Transformer ------------------------
 from .vit_mae import mae_vit_nano, mae_vit_tiny, mae_vit_base, mae_vit_large, mae_vit_huge
 
-def build_mae_vit(args):
+def build_mae_vit(args, is_train=False):
     # build vit model
     if args.model == 'mae_vit_nano':
-        model = mae_vit_nano(args.img_size, args.patch_size, args.img_dim, args.mask_ratio, args.norm_pix_loss)
+        model = mae_vit_nano(args.img_size, args.patch_size, args.img_dim, args.mask_ratio, is_train, args.norm_pix_loss)
     elif args.model == 'mae_vit_tiny':
-        model = mae_vit_tiny(args.img_size, args.patch_size, args.img_dim, args.mask_ratio, args.norm_pix_loss)
+        model = mae_vit_tiny(args.img_size, args.patch_size, args.img_dim, args.mask_ratio, is_train, args.norm_pix_loss)
     elif args.model == 'mae_vit_base':
-        model = mae_vit_base(args.img_size, args.patch_size, args.img_dim, args.mask_ratio, args.norm_pix_loss)
+        model = mae_vit_base(args.img_size, args.patch_size, args.img_dim, args.mask_ratio, is_train, args.norm_pix_loss)
     elif args.model == 'mae_vit_large':
-        model = mae_vit_large(args.img_size, args.patch_size, args.img_dim, args.mask_ratio, args.norm_pix_loss)
+        model = mae_vit_large(args.img_size, args.patch_size, args.img_dim, args.mask_ratio, is_train, args.norm_pix_loss)
     elif args.model == 'mae_vit_huge':
-        model = mae_vit_huge(args.img_size, args.patch_size, args.img_dim, args.mask_ratio, args.norm_pix_loss)
+        model = mae_vit_huge(args.img_size, args.patch_size, args.img_dim, args.mask_ratio, is_train, args.norm_pix_loss)
 
     return model

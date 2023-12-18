@@ -151,6 +151,7 @@ class MAE_ViT_Decoder(nn.Module):
         # -------- basic parameters --------
         self.img_dim = img_dim
         self.img_size = img_size
+        self.patch_size = patch_size
         self.num_patches = (img_size // patch_size) ** 2
         self.en_emb_dim = en_emb_dim
         self.de_emb_dim = de_emb_dim
@@ -259,11 +260,14 @@ class MAE_VisionTransformer(nn.Module):
                  mlp_ratio     :float = 4.0,
                  dropout       :float = 0.1,
                  mask_ratio    :float = 0.75,
+                 is_train      :bool  = False,
                  norm_pix_loss :bool = False):
         super().__init__()
         # -------- basic parameters --------
         self.img_dim = img_dim
+        self.is_train = is_train
         self.img_size = img_size
+        self.patch_size = patch_size
         self.num_patches = (img_size // patch_size) ** 2
         ## encoder
         self.en_emb_dim = en_emb_dim
@@ -281,8 +285,57 @@ class MAE_VisionTransformer(nn.Module):
         self.mae_decoder = MAE_ViT_Decoder(
             img_size, patch_size, img_dim, en_emb_dim, de_emb_dim, de_num_layers, de_num_heads, qkv_bias, mlp_ratio, dropout, norm_pix_loss)
 
+    def patchify(self, imgs, patch_size):
+        """
+        imgs: (B, 3, H, W)
+        x: (N, L, patch_size**2 *3)
+        """
+        p = patch_size
+        assert imgs.shape[2] == imgs.shape[3] and imgs.shape[2] % p == 0
+
+        h = w = imgs.shape[2] // p
+        x = imgs.reshape(shape=(imgs.shape[0], 3, h, p, w, p))
+        x = torch.einsum('nchpwq->nhwpqc', x)
+        x = x.reshape(shape=(imgs.shape[0], h * w, p**2 * 3))
+
+        return x
+
+    def unpatchify(self, x, patch_size):
+        """
+        x: (B, N, patch_size**2 *3)
+        imgs: (B, 3, H, W)
+        """
+        p = patch_size
+        h = w = int(x.shape[1]**.5)
+        assert h * w == x.shape[1]
+        
+        x = x.reshape(shape=(x.shape[0], h, w, p, p, 3))
+        x = torch.einsum('nhwpqc->nchpwq', x)
+        imgs = x.reshape(shape=(x.shape[0], 3, h * p, h * p))
+
+        return imgs
+
+    def compute_loss(self, x, output):
+        """
+        imgs: [B, 3, H, W]
+        pred: [B, N, C], C = p*p*3
+        mask: [B, N], 0 is keep, 1 is remove, 
+        """
+        target = self.patchify(x, self.patch_size)
+        if self.norm_pix_loss:
+            mean = target.mean(dim=-1, keepdim=True)
+            var = target.var(dim=-1, keepdim=True)
+            target = (target - mean) / (var + 1.e-6)**.5
+
+        pred, mask = output["x_pred"], output["mask"]
+        loss = (pred - target) ** 2
+        loss = loss.mean(dim=-1)  # [B, N], mean loss per patch
+        loss = (loss * mask).sum() / mask.sum()  # mean loss on removed patches
+        
+        return loss
 
     def forward(self, x):
+        imgs = x
         x, mask, ids_restore = self.mae_encoder(x)
         x = self.mae_decoder(x, ids_restore)
         output = {
@@ -290,11 +343,15 @@ class MAE_VisionTransformer(nn.Module):
             'mask': mask
         }
 
+        if self.is_train:
+            loss = self.compute_loss(imgs, output)
+            output["loss"] = loss
+
         return output
 
 
 # ------------------------ Model Functions ------------------------
-def mae_vit_nano(img_size=224, patch_size=16, img_dim=3, mask_ratio=0.75, norm_pix_loss=False):
+def mae_vit_nano(img_size=224, patch_size=16, img_dim=3, mask_ratio=0.75, is_train=False, norm_pix_loss=False):
     model = MAE_VisionTransformer(img_size      = img_size,
                                   patch_size    = patch_size,
                                   img_dim       = img_dim,
@@ -308,11 +365,12 @@ def mae_vit_nano(img_size=224, patch_size=16, img_dim=3, mask_ratio=0.75, norm_p
                                   mlp_ratio     = 4.0,
                                   dropout       = 0.1,
                                   mask_ratio    = mask_ratio,
+                                  is_train      = is_train,
                                   norm_pix_loss = norm_pix_loss)
 
     return model
 
-def mae_vit_tiny(img_size=224, patch_size=16, img_dim=3, mask_ratio=0.75, norm_pix_loss=False):
+def mae_vit_tiny(img_size=224, patch_size=16, img_dim=3, mask_ratio=0.75, is_train=False, norm_pix_loss=False):
     model = MAE_VisionTransformer(img_size      = img_size,
                                   patch_size    = patch_size,
                                   img_dim       = img_dim,
@@ -326,11 +384,12 @@ def mae_vit_tiny(img_size=224, patch_size=16, img_dim=3, mask_ratio=0.75, norm_p
                                   mlp_ratio     = 4.0,
                                   dropout       = 0.1,
                                   mask_ratio    = mask_ratio,
+                                  is_train      = is_train,
                                   norm_pix_loss = norm_pix_loss)
 
     return model
 
-def mae_vit_base(img_size=224, patch_size=16, img_dim=3, mask_ratio=0.75, norm_pix_loss=False):
+def mae_vit_base(img_size=224, patch_size=16, img_dim=3, mask_ratio=0.75, is_train=False, norm_pix_loss=False):
     model = MAE_VisionTransformer(img_size      = img_size,
                                   patch_size    = patch_size,
                                   img_dim       = img_dim,
@@ -344,11 +403,12 @@ def mae_vit_base(img_size=224, patch_size=16, img_dim=3, mask_ratio=0.75, norm_p
                                   mlp_ratio     = 4.0,
                                   dropout       = 0.1,
                                   mask_ratio    = mask_ratio,
+                                  is_train      = is_train,
                                   norm_pix_loss = norm_pix_loss)
 
     return model
 
-def mae_vit_large(img_size=224, patch_size=16, img_dim=3, mask_ratio=0.75, norm_pix_loss=False):
+def mae_vit_large(img_size=224, patch_size=16, img_dim=3, mask_ratio=0.75, is_train=False, norm_pix_loss=False):
     model = MAE_VisionTransformer(img_size      = img_size,
                                   patch_size    = patch_size,
                                   img_dim       = img_dim,
@@ -362,11 +422,12 @@ def mae_vit_large(img_size=224, patch_size=16, img_dim=3, mask_ratio=0.75, norm_
                                   mlp_ratio     = 4.0,
                                   dropout       = 0.1,
                                   mask_ratio    = mask_ratio,
+                                  is_train      = is_train,
                                   norm_pix_loss = norm_pix_loss)
 
     return model
 
-def mae_vit_huge(img_size=224, patch_size=16, img_dim=3, mask_ratio=0.75, norm_pix_loss=False):
+def mae_vit_huge(img_size=224, patch_size=16, img_dim=3, mask_ratio=0.75, is_train=False, norm_pix_loss=False):
     model = MAE_VisionTransformer(img_size      = img_size,
                                   patch_size    = patch_size,
                                   img_dim       = img_dim,
@@ -380,6 +441,7 @@ def mae_vit_huge(img_size=224, patch_size=16, img_dim=3, mask_ratio=0.75, norm_p
                                   mlp_ratio     = 4.0,
                                   dropout       = 0.1,
                                   mask_ratio    = mask_ratio,
+                                  is_train      = is_train,
                                   norm_pix_loss = norm_pix_loss)
 
     return model
@@ -387,14 +449,23 @@ def mae_vit_huge(img_size=224, patch_size=16, img_dim=3, mask_ratio=0.75, norm_p
 
 if __name__ == '__main__':
     import torch
-    from ptflops import get_model_complexity_info
+    from thop import profile
 
     # build model
-    model = mae_vit_tiny(patch_size=16)
+    bs, c, h, w = 2, 3, 224, 224
+    is_train = True
+    x = torch.randn(bs, c, h, w)
+    model = mae_vit_tiny(patch_size=16, is_train=is_train)
 
-    # calculate params & flops
-    flops_count, params_count = get_model_complexity_info(model,(3,224,224), as_strings=True, print_per_layer_stat=False)
+    # inference
+    outputs = model(x)
+    if "loss" in outputs:
+        print("Loss: ", outputs["loss"].item())
 
-    print('flops: ', flops_count)
-    print('params: ', params_count)
+    # compute FLOPs & Params
+    print('==============================')
+    flops, params = profile(model, inputs=(x, ), verbose=False)
+    print('GFLOPs : {:.2f}'.format(flops / 1e9 * 2))
+    print('Params : {:.2f} M'.format(params / 1e6))
+
     

@@ -21,7 +21,9 @@ class MAE_ResNet(nn.Module):
                  replace_stride_with_dilation: Optional[List[bool]] = None,
                  norm_layer: Optional[Callable[..., nn.Module]] = None,
                  mask_patch_size: int = 32,
-                 mask_ratio: float = 0.75
+                 mask_ratio: float = 0.75,
+                 is_train: bool = False,
+                 norm_pix_loss: bool = False
                  ) -> None:
         super().__init__()
         # --------------- Basic parameters ----------------
@@ -29,8 +31,10 @@ class MAE_ResNet(nn.Module):
         self.base_width = width_per_group
         self.inplanes = 64
         self.dilation = 1
+        self.is_train = is_train
         self.mask_ratio = mask_ratio
         self.mask_patch_size = mask_patch_size
+        self.norm_pix_loss = norm_pix_loss
         self.zero_init_residual = zero_init_residual
         self.replace_stride_with_dilation = [False, False, False] if replace_stride_with_dilation is None else replace_stride_with_dilation
         self.out_stride = 16 if self.replace_stride_with_dilation[-1] else 32
@@ -182,8 +186,27 @@ class MAE_ResNet(nn.Module):
         mask = self.unpatchify(mask, self.mask_patch_size)
 
         return x_masked, mask
-  
+
+    def compute_loss(self, x, output):
+        """
+        x:    [B, 3, H, W]
+        pred: [B, 3, H, W]
+        mask: [B, 3, H, W] 0 is keep, 1 is remove, 
+        """
+        if self.norm_pix_loss:
+            mean = x.mean(dim=1, keepdim=True)
+            var  = x.var(dim=1, keepdim=True)
+            x    = (x - mean) / (var + 1.e-6)**.5
+        pred, mask = output["x_pred"], output["mask"]
+        loss = (pred - x) ** 2
+        loss = loss.mean(1)
+        mask = mask[:, 0, :, :]
+        loss = (loss * mask).sum() / mask.sum()
+        
+        return loss
+
     def forward(self, x: Tensor) -> Tensor:
+        imgs = x
         x_masked, mask = self.random_masking(x)
 
         # See note [TorchScript super()]
@@ -209,6 +232,10 @@ class MAE_ResNet(nn.Module):
             'x_pred': x,   # [B, 3, H, W]
             'mask': mask   # [B, 3, H, W]
         }
+
+        if self.is_train:
+            loss = self.compute_loss(imgs, output)
+            output["loss"] = loss
 
         return output
 
@@ -246,13 +273,23 @@ if __name__ == '__main__':
 
     # build model
     bs, c, h, w = 2, 3, 224, 224
+    is_train = True
     x = torch.randn(bs, c, h, w)
-    model = mae_resnet50(mask_patch_size=2)
+    model = mae_resnet50(mask_patch_size=16, is_train=is_train)
 
     # inference
     outputs = model(x)
+
+    # compute FLOPs & Params
+    print('==============================')
+    flops, params = profile(model, inputs=(x, ), verbose=False)
+    print('GFLOPs : {:.2f}'.format(flops / 1e9 * 2))
+    print('Params : {:.2f} M'.format(params / 1e6))
+
     x_preds = outputs["x_pred"]
     masks = outputs["mask"]
+    if "loss" in outputs:
+        print("Loss: ", outputs["loss"].item())
 
     with torch.no_grad():
         for bi in range(bs):
@@ -265,9 +302,3 @@ if __name__ == '__main__':
             cv2.waitKey(0)
             cv2.imshow('mask', mask)
             cv2.waitKey(0)
-
-    # compute FLOPs & Params
-    print('==============================')
-    flops, params = profile(model, inputs=(x, ), verbose=False)
-    print('GFLOPs : {:.2f}'.format(flops / 1e9 * 2))
-    print('Params : {:.2f} M'.format(params / 1e6))

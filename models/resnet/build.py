@@ -46,17 +46,17 @@ def build_resnet(args):
 # ------------------------ MAE ResNet ------------------------
 from .resnet_mae import mae_resnet18, mae_resnet34, mae_resnet50, mae_resnet101, mae_resnet152
 
-def build_mae_resnet(args):
+def build_mae_resnet(args, is_train=False):
     # build vit model
     if args.model == 'mae_resnet18':
-        model = mae_resnet18(mask_patch_size=32)
+        model = mae_resnet18(mask_patch_size=args.patch_size, mask_ratio=args.mask_ratio, is_train=is_train, norm_pix_loss=args.norm_pix_loss)
     elif args.model == 'mae_resnet34':
-        model = mae_resnet34(mask_patch_size=32)
+        model = mae_resnet34(mask_patch_size=args.patch_size, mask_ratio=args.mask_ratio, is_train=is_train, norm_pix_loss=args.norm_pix_loss)
     elif args.model == 'mae_resnet50':
-        model = mae_resnet50(mask_patch_size=32)
+        model = mae_resnet50(mask_patch_size=args.patch_size, mask_ratio=args.mask_ratio, is_train=is_train, norm_pix_loss=args.norm_pix_loss)
     elif args.model == 'mae_resnet101':
-        model = mae_resnet101(mask_patch_size=32)
+        model = mae_resnet101(mask_patch_size=args.patch_size, mask_ratio=args.mask_ratio, is_train=is_train, norm_pix_loss=args.norm_pix_loss)
     elif args.model == 'mae_resnet152':
-        model = mae_resnet152(mask_patch_size=32)
+        model = mae_resnet152(mask_patch_size=args.patch_size, mask_ratio=args.mask_ratio, is_train=is_train, norm_pix_loss=args.norm_pix_loss)
 
     return model
