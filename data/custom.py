@@ -8,7 +8,7 @@ from torchvision.datasets import ImageFolder
 import torchvision.transforms as transforms
 
 
-class ImageNet1KDataset(data.Dataset):
+class CustomDataset(data.Dataset):
     def __init__(self, args, is_train=False, transform=None):
         super().__init__()
         # ----------------- basic parameters -----------------
@@ -44,7 +44,7 @@ class ImageNet1KDataset(data.Dataset):
 
     def build_transform(self, args):
         if self.is_train:
-            transforms = create_transform(input_size    = args.input_size,
+            transforms = create_transform(input_size    = args.img_size,
                                           is_training   = True,
                                           color_jitter  = args.color_jitter,
                                           auto_augment  = args.aa,
@@ -57,15 +57,15 @@ class ImageNet1KDataset(data.Dataset):
                                           )
         else:
             t = []
-            if args.input_size <= 224:
+            if args.img_size <= 224:
                 crop_pct = 224 / 256
             else:
                 crop_pct = 1.0
-            size = int(args.input_size / crop_pct)
+            size = int(args.img_size / crop_pct)
             t.append(
                 T.Resize(size, interpolation=PIL.Image.BICUBIC),  # to maintain same ratio w.r.t. 224 images
             )
-            t.append(T.CenterCrop(args.input_size))
+            t.append(T.CenterCrop(args.img_size))
             t.append(T.ToTensor())
             t.append(t.Normalize(self.mean, self.std))
             transforms = T.Compose(t)
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     import torch
     import argparse
     
-    parser = argparse.ArgumentParser(description='ImageNet-Dataset')
+    parser = argparse.ArgumentParser(description='Custom-Dataset')
 
     # opt
     parser.add_argument('--root', default='/mnt/share/ssd2/dataset/imagenet/',
@@ -166,7 +166,7 @@ if __name__ == "__main__":
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
   
     # Dataset
-    dataset = ImageNet1KDataset(args, is_train=True)  
+    dataset = CustomDataset(args, is_train=True, transform=train_transform)  
     print('Dataset size: ', len(dataset))
 
     for i in range(1000):

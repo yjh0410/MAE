@@ -2,6 +2,7 @@ import torch.utils.data as data
 
 from .cifar import CifarDataset
 from .imagenet import ImageNet1KDataset
+from .custom import CustomDataset
 
 
 def build_dataset(args, transform=None, is_train=False):
@@ -11,6 +12,10 @@ def build_dataset(args, transform=None, is_train=False):
     elif args.dataset == 'imagenet_1k':
         args.num_classes = 1000
         return ImageNet1KDataset(args, is_train, transform)
+    elif args.dataset == 'custom':
+        assert args.num_classes is not None and isinstance(args.num_classes, int)
+        return CustomDataset(args, is_train, transform)
+    
 
 
 def build_dataloader(args, dataset, is_train=False):
