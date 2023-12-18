@@ -29,6 +29,12 @@ elif [[ $DATASET == "imagenet_1k" || $DATASET == "imagenet_22k" ]]; then
     # Image config
     IMG_SIZE=224
     PATCH_SIZE=16
+elif [[ $DATASET == "custom" ]]; then
+    # Data root
+    ROOT="path/to/custom"
+    # Image config
+    IMG_SIZE=224
+    PATCH_SIZE=16
 else
     echo "Unknown dataset!!"
     exit 1

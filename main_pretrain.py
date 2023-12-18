@@ -72,6 +72,8 @@ def parse_args():
                         help='dataset name')
     parser.add_argument('--root', type=str, default='/mnt/share/ssd2/dataset',
                         help='path to dataset folder')
+    parser.add_argument('--num_classes', type=int, default=None, 
+                        help='number of classes.')
     # Model
     parser.add_argument('-m', '--model', type=str, default='vit_nano',
                         help='model name')
