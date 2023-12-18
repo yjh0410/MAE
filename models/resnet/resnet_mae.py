@@ -5,9 +5,9 @@ import torch.nn as nn
 from torch import Tensor
 
 try:
-    from .resnet_modules import conv1x1, conv3x3, BasicBlock, Bottleneck
+    from .resnet_modules import conv1x1, BasicBlock, Bottleneck
 except:
-     from resnet_modules import conv1x1, conv3x3, BasicBlock, Bottleneck
+     from resnet_modules import conv1x1, BasicBlock, Bottleneck
    
 
 class MAE_ResNet(nn.Module):
@@ -33,6 +33,7 @@ class MAE_ResNet(nn.Module):
         self.mask_patch_size = mask_patch_size
         self.zero_init_residual = zero_init_residual
         self.replace_stride_with_dilation = [False, False, False] if replace_stride_with_dilation is None else replace_stride_with_dilation
+        self.out_stride = 16 if self.replace_stride_with_dilation[-1] else 32
         if len(self.replace_stride_with_dilation) != 3:
             raise ValueError(
                 "replace_stride_with_dilation should be None "
@@ -52,7 +53,7 @@ class MAE_ResNet(nn.Module):
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2, dilate=self.replace_stride_with_dilation[1])
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2, dilate=self.replace_stride_with_dilation[2])
         ## Out layer
-        self.output_proj = nn.Conv2d(512 * block.expansion, in_channels * mask_patch_size ** 2, kernel_size=1)
+        self.output_proj = nn.Conv2d(512 * block.expansion, in_channels * self.out_stride ** 2, kernel_size=1)
 
         self._init_layer()
 
@@ -171,16 +172,17 @@ class MAE_ResNet(nn.Module):
         # generate the binary mask: 0 is keep, 1 is remove
         mask = torch.ones([B, N], device=x.device)
         mask[:, :len_keep] = 0
+        mask = mask.unsqueeze(-1).expand(-1, -1, C)
 
         # unshuffle to get the binary mask
-        mask = torch.gather(mask, dim=1, index=ids_restore)
+        mask = torch.gather(mask, dim=1, index=ids_restore.unsqueeze(-1).repeat(1, 1, C))
 
         # ----------------- Step-3: Reshape masked patches to image format -----------------
         x_masked = self.unpatchify(x_masked, self.mask_patch_size)
-        mask = mask.view(B, Hp, Wp)
+        mask = self.unpatchify(mask, self.mask_patch_size)
 
         return x_masked, mask
-    
+  
     def forward(self, x: Tensor) -> Tensor:
         x_masked, mask = self.random_masking(x)
 
@@ -199,11 +201,13 @@ class MAE_ResNet(nn.Module):
 
         # Reshape: [B, C, H, W] -> [B, N, C]
         x = x.flatten(2).permute(0, 2, 1).contiguous()
-        mask = mask.flatten(1)
+
+        # Unpatchify: [B, N, C] -> [B, 3, H, W]
+        x = self.unpatchify(x, patch_size=32)
 
         output = {
-            'x_pred': x,   # [B, N, C]
-            'mask': mask   # [B, N]
+            'x_pred': x,   # [B, 3, H, W]
+            'mask': mask   # [B, 3, H, W]
         }
 
         return output
@@ -236,12 +240,33 @@ def mae_resnet152(**kwargs) -> MAE_ResNet:
 
 if __name__ == '__main__':
     import torch
+    import cv2
+    import numpy as np
     from thop import profile
 
     # build model
-    model = mae_resnet50(mask_patch_size=32)
+    bs, c, h, w = 2, 3, 224, 224
+    x = torch.randn(bs, c, h, w)
+    model = mae_resnet50(mask_patch_size=2)
 
-    x = torch.randn(1, 3, 224, 224)
+    # inference
+    outputs = model(x)
+    x_preds = outputs["x_pred"]
+    masks = outputs["mask"]
+
+    with torch.no_grad():
+        for bi in range(bs):
+            img = x[bi].permute(1, 2, 0).numpy().astype(np.uint8) * 255
+            x_pred = x_preds[bi].permute(1, 2, 0).numpy().astype(np.uint8)
+            mask = masks[bi].permute(1, 2, 0).numpy().astype(np.uint8) * 255
+            cv2.imshow('masked image', img)
+            cv2.waitKey(0)
+            cv2.imshow('pred image', x_pred)
+            cv2.waitKey(0)
+            cv2.imshow('mask', mask)
+            cv2.waitKey(0)
+
+    # compute FLOPs & Params
     print('==============================')
     flops, params = profile(model, inputs=(x, ), verbose=False)
     print('GFLOPs : {:.2f}'.format(flops / 1e9 * 2))

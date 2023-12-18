@@ -37,6 +37,16 @@ else
     exit 1
 fi
 
+# Loss setting
+if [[ $MODEL == *"mae_vit"* ]]; then
+    LOSS_TYPE="mae"
+elif [[ $MODEL == *"mae_resnet"* ]]; then
+    LOSS_TYPE="sim_mae"
+else
+    echo "Unknown model!!"
+    exit 1
+fi
+
 
 # ------------------- Training pipeline -------------------
 WORLD_SIZE=1

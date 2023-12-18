@@ -93,6 +93,8 @@ def parse_args():
     parser.add_argument('--max_grad_norm', type=float, default=None,
                         help='Clip gradient norm (default: None, no clipping)')
     # Loss
+    parser.add_argument('--loss_type', type=str, default="mae", choices=["mae", "sim_mae"],
+                        help='loss type.')
     parser.add_argument('--norm_pix_loss', action='store_true', default=False,
                         help='normalize pixels before computing loss.')
     # DDP

@@ -315,6 +315,23 @@ def mae_loss(imgs, pred, mask, patch_size, norm_pix_loss=False):
     
     return loss
 
+def sim_mae_loss(imgs, pred, mask, norm_pix_loss=False):
+    """
+    imgs: [B, 3, H, W]
+    pred: [B, 3, H, W]
+    mask: [B, 3, H, W] 0 is keep, 1 is remove, 
+    """
+    if norm_pix_loss:
+        mean = imgs.mean(dim=1, keepdim=True)
+        var = imgs.var(dim=1, keepdim=True)
+        imgs = (imgs - mean) / (var + 1.e-6)**.5
+
+    loss = (pred - imgs) ** 2
+    loss = loss * mask
+    loss = loss.sum() / mask.mean(dim=1).sum()
+    
+    return loss
+
 
 # ---------------------- Model functions ----------------------
 class ModelEMA(object):

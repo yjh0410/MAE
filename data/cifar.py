@@ -121,13 +121,14 @@ if __name__ == "__main__":
         # generate the binary mask: 0 is keep, 1 is remove
         mask = torch.ones([B, N], device=x.device)
         mask[:, :len_keep] = 0
+        mask = mask.unsqueeze(-1).expand(-1, -1, C)
 
         # unshuffle to get the binary mask
-        mask = torch.gather(mask, dim=1, index=ids_restore)
+        mask = torch.gather(mask, dim=1, index=ids_restore.unsqueeze(-1).repeat(1, 1, C))
 
         # ----------------- Step-3: Reshape masked patches to image format -----------------
         x_masked = unpatchify(x_masked, mask_patch_size)
-        mask = mask.view(B, Hp, Wp)
+        mask = unpatchify(mask, mask_patch_size)
 
         return x_masked, mask
   
@@ -139,21 +140,18 @@ if __name__ == "__main__":
         image, target = dataset.pull_image(i)
         # to BGR
         image = image[..., (2, 1, 0)]
-        print(image.shape)
 
         cv2.imshow('image', image)
         cv2.waitKey(0)
 
         image = torch.as_tensor(image).permute(2, 0, 1).unsqueeze(0)
         image = torch.cat([image] * 8, dim=0)
-        print(image.shape)
 
-        image_masked, masks = random_masking(image)
+        image_masked, masks = random_masking(image, mask_patch_size=8)
 
         for bi in range(8):
             img = image_masked[bi].permute(1, 2, 0).numpy().astype(np.uint8)
-            mask = masks[bi].numpy().astype(np.uint8) * 255
-            mask = cv2.resize(mask, (32, 32), interpolation=cv2.INTER_NEAREST)
+            mask = masks[bi].permute(1, 2, 0).numpy().astype(np.uint8) * 255
             cv2.imshow('masked image', img)
             cv2.waitKey(0)
             cv2.imshow('mask', mask)
