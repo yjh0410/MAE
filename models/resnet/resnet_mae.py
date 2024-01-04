@@ -149,8 +149,6 @@ class MAE_ResNet(nn.Module):
     def random_masking(self, x):
         # ----------------- Step-1: Patch embed -----------------
         # Patchify: [B, C, H, W] -> [B, N, C*P*P]
-        H, W = x.shape[2:]
-        Hp, Wp = H // self.mask_patch_size, W // self.mask_patch_size
         patches = self.patchify(x, self.mask_patch_size)
         B, N, C = patches.shape
 

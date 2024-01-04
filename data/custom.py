@@ -81,7 +81,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Custom-Dataset')
 
     # opt
-    parser.add_argument('--root', default='/mnt/share/ssd2/dataset/imagenet/',
+    parser.add_argument('--root', default='/Users/liuhaoran/Desktop/python_work/classification/dataset/Animals/',
                         help='data root')
     parser.add_argument('--img_size', default=224, type=int,
                         help='input image size.')
@@ -120,8 +120,6 @@ if __name__ == "__main__":
     def random_masking(x, mask_patch_size=2, mask_ratio=0.75):
         # ----------------- Step-1: Patch embed -----------------
         # Patchify: [B, C, H, W] -> [B, N, C*P*P]
-        H, W = x.shape[2:]
-        Hp, Wp = H // mask_patch_size, W // mask_patch_size
         patches = patchify(x, mask_patch_size)
         B, N, C = patches.shape
 
