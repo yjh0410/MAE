@@ -169,7 +169,7 @@ class MAE_ResNet(nn.Module):
         keep_patches = torch.gather(patches, dim=1, index=ids_keep.unsqueeze(-1).repeat(1, 1, C))
 
         # unshuffle to get the masked image [B, N, 3*P*P]
-        mask_patches = torch.zeros(B, N-len_keep, C)
+        mask_patches = torch.zeros(B, N-len_keep, C, device=x.device)
         x_masked = torch.cat([keep_patches, mask_patches], dim=1)
         x_masked = torch.gather(x_masked, dim=1, index=ids_restore.unsqueeze(-1).repeat(1, 1, C))
 
