@@ -1,5 +1,5 @@
 # Model config
-MODEL="mae_vit_tiny"
+MODEL="mae_resnet18"
 
 # Batch size
 BATCH_SIZE=256
@@ -9,35 +9,36 @@ MAX_EPOCH=800
 WP_EPOCH=40
 EVAL_EPOCH=20
 
-# Optimizer config
-OPTIMIZER="adamw"
-BASE_LR=0.00015
-MIN_LR=0
-WEIGHT_DECAY=0.05
-
-# Mask ratio
-MASK_RATIO=0.75
-
 # Dataset config
-DATASET="cifar10"
-if [[ $DATASET == "cifar10" || $DATASET == "cifar100" ]]; then
+DATASET="custom"
+if [[ $DATASET == "cifar10" ]]; then
     # Data root
     ROOT="none"
     # Image config
     IMG_SIZE=32
     PATCH_SIZE=2
+    NUM_CLASSES=10
+elif [[ $DATASET == "cifar100" ]]; then
+    # Data root
+    ROOT="none"
+    # Image config
+    IMG_SIZE=32
+    PATCH_SIZE=2
+    NUM_CLASSES=100
 elif [[ $DATASET == "imagenet_1k" || $DATASET == "imagenet_22k" ]]; then
     # Data root
-    ROOT="path/to/imagenet"
+    ROOT="/data/datasets/imagenet-1k/"
     # Image config
     IMG_SIZE=224
     PATCH_SIZE=16
+    NUM_CLASSES=1000
 elif [[ $DATASET == "custom" ]]; then
     # Data root
-    ROOT="path/to/custom"
+    ROOT="/Users/liuhaoran/Desktop/python_work/classification/dataset/Animals/"
     # Image config
     IMG_SIZE=224
     PATCH_SIZE=16
+    NUM_CLASSES=2
 else
     echo "Unknown dataset!!"
     exit 1
@@ -45,9 +46,21 @@ fi
 
 # Loss setting
 if [[ $MODEL == *"mae_vit"* ]]; then
-    LOSS_TYPE="mae"
+    # Optimizer config
+    OPTIMIZER="adamw"
+    BASE_LR=0.00015
+    MIN_LR=0
+    WEIGHT_DECAY=0.05
+    # Mask ratio
+    MASK_RATIO=0.75
 elif [[ $MODEL == *"mae_resnet"* ]]; then
-    LOSS_TYPE="sim_mae"
+    # Optimizer config
+    OPTIMIZER="adamw"
+    BASE_LR=0.00015
+    MIN_LR=0
+    WEIGHT_DECAY=0.05
+    # Mask ratio
+    MASK_RATIO=0.75
 else
     echo "Unknown model!!"
     exit 1
@@ -55,7 +68,7 @@ fi
 
 
 # ------------------- Training pipeline -------------------
-WORLD_SIZE=1
+WORLD_SIZE=$1
 if [ $WORLD_SIZE == 1 ]; then
     python main_pretrain.py \
             --cuda \
