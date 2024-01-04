@@ -10,7 +10,7 @@ WP_EPOCH=40
 EVAL_EPOCH=20
 
 # Dataset config
-DATASET="custom"
+DATASET="imagenet_1k"
 if [[ $DATASET == "cifar10" ]]; then
     # Data root
     ROOT="none"
