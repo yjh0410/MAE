@@ -1,15 +1,37 @@
-# Model config
+# ------------------- Model setting -------------------
 MODEL="mae_resnet18"
 
-# Batch size
+
+# ------------------- Training setting -------------------
+## Batch size
 BATCH_SIZE=256
 
-# Epoch config
+## Epoch
 MAX_EPOCH=800
 WP_EPOCH=40
 EVAL_EPOCH=20
 
-# Dataset config
+if [[ $MODEL == *"mae_vit"* ]]; then
+    MASK_RATIO=0.75
+    # Optimizer config
+    OPTIMIZER="adamw"
+    BASE_LR=0.00015
+    MIN_LR=0
+    WEIGHT_DECAY=0.05
+elif [[ $MODEL == *"mae_resnet"* ]]; then
+    MASK_RATIO=0.75
+    # Optimizer config
+    OPTIMIZER="adamw"
+    BASE_LR=0.00015
+    MIN_LR=0
+    WEIGHT_DECAY=0.05
+else
+    echo "Unknown model!!"
+    exit 1
+fi
+
+
+# ------------------- Dataset setting -------------------
 DATASET="imagenet_1k"
 if [[ $DATASET == "cifar10" ]]; then
     # Data root
@@ -41,28 +63,6 @@ elif [[ $DATASET == "custom" ]]; then
     NUM_CLASSES=2
 else
     echo "Unknown dataset!!"
-    exit 1
-fi
-
-# Loss setting
-if [[ $MODEL == *"mae_vit"* ]]; then
-    # Optimizer config
-    OPTIMIZER="adamw"
-    BASE_LR=0.00015
-    MIN_LR=0
-    WEIGHT_DECAY=0.05
-    # Mask ratio
-    MASK_RATIO=0.75
-elif [[ $MODEL == *"mae_resnet"* ]]; then
-    # Optimizer config
-    OPTIMIZER="adamw"
-    BASE_LR=0.00015
-    MIN_LR=0
-    WEIGHT_DECAY=0.05
-    # Mask ratio
-    MASK_RATIO=0.75
-else
-    echo "Unknown model!!"
     exit 1
 fi
 

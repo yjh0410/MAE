@@ -1,37 +1,68 @@
-# Note that the configuration in this script accessory are not fully aligned with the official configuration.
-
-# Model config
+# ------------------- Model setting -------------------
 MODEL="vit_tiny"
+
+
+# ------------------- Training setting -------------------
+BATCH_SIZE=256
 if [ $MODEL == "vit_huge" ]; then
     MAX_EPOCH=200
     WP_EPOCH=20
     EVAL_EPOCH=10
     LAYER_DECAY=1.0
     DROP_PATH=0.2
+    # Optimizer config
+    OPTIMIZER="adamw"
+    BASE_LR=1e-4
+    MIN_LR=1e-6
+    WEIGHT_DECAY=0.3
 elif [ $MODEL == "vit_large" ]; then
     MAX_EPOCH=200
     WP_EPOCH=20
     EVAL_EPOCH=10
     LAYER_DECAY=1.0
     DROP_PATH=0.2
+    # Optimizer config
+    OPTIMIZER="adamw"
+    BASE_LR=1e-4
+    MIN_LR=1e-6
+    WEIGHT_DECAY=0.3
+elif [ $MODEL == *"vit"* ]; then
+    MAX_EPOCH=300
+    WP_EPOCH=20
+    EVAL_EPOCH=10
+    LAYER_DECAY=1.0
+    DROP_PATH=0.1
+    # Optimizer config
+    OPTIMIZER="adamw"
+    BASE_LR=1e-4
+    MIN_LR=1e-6
+    WEIGHT_DECAY=0.3
+elif [ $MODEL == *"resnet"* ]; then
+    MAX_EPOCH=300
+    WP_EPOCH=20
+    EVAL_EPOCH=10
+    LAYER_DECAY=1.0
+    DROP_PATH=0.1
+    # Optimizer config
+    OPTIMIZER="adamw"
+    BASE_LR=1e-4
+    MIN_LR=1e-6
+    WEIGHT_DECAY=0.05
 else
     MAX_EPOCH=300
     WP_EPOCH=20
     EVAL_EPOCH=10
     LAYER_DECAY=1.0
     DROP_PATH=0.1
+    # Optimizer config
+    OPTIMIZER="adamw"
+    BASE_LR=1e-4
+    MIN_LR=1e-6
+    WEIGHT_DECAY=0.05
 fi
 
-# Batch size
-BATCH_SIZE=256
 
-# Optimizer config
-OPTIMIZER="adamw"
-BASE_LR=0.0001
-MIN_LR=1e-6
-WEIGHT_DECAY=0.3
-
-# Dataset config
+# ------------------- Dataset config -------------------
 DATASET="cifar10"
 if [[ $DATASET == "cifar10" || $DATASET == "cifar100" ]]; then
     # Data root
@@ -49,6 +80,7 @@ else
     echo "Unknown dataset!!"
     exit 1
 fi
+
 
 # ------------------- Training pipeline -------------------
 WORLD_SIZE=1

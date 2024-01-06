@@ -1,21 +1,24 @@
-# Model config
+# ------------------- Model setting -------------------
 MODEL="vit_tiny"
 MAE_PRETRAINED_MODEL="weights/cifar10/mae_vit_tiny/checkpoint-0.pth"
 
-# Batch size
+
+# ------------------- Training setting -------------------
+## Batch size
 BATCH_SIZE=256
 
-# Epoch config
+## Epoch
 MAX_EPOCH=100
 WP_EPOCH=5
 EVAL_EPOCH=5
 
-# Optimizer config
+## Optimizer
 BASE_LR=0.1
 MIN_LR=0.0
 WEIGHT_DECAY=0.05
 
-# Dataset config
+
+# ------------------- Dataset setting -------------------
 DATASET="cifar10"
 if [[ $DATASET == "cifar10" || $DATASET == "cifar100" ]]; then
     # Data root
@@ -39,6 +42,7 @@ else
     echo "Unknown dataset!!"
     exit 1
 fi
+
 
 # ------------------- Training pipeline -------------------
 WORLD_SIZE=1

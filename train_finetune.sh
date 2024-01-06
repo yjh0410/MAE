@@ -1,6 +1,17 @@
-# Model config
+# ------------------- Model setting -------------------
 MODEL="vit_tiny"
 MAE_PRETRAINED_MODEL="weights/cifar10/mae_vit_tiny/checkpoint-799.pth"
+
+
+# ------------------- Training setting -------------------
+## Batch size
+BATCH_SIZE=256
+
+## Optimizer
+OPTIMIZER="adamw"
+MIN_LR=1e-6
+WEIGHT_DECAY=0.05
+
 if [ $MODEL == "vit_huge" ]; then
     MAX_EPOCH=50
     WP_EPOCH=5
@@ -15,6 +26,20 @@ elif [ $MODEL == "vit_large" ]; then
     BASE_LR=0.001
     LAYER_DECAY=0.75
     DROP_PATH=0.2
+elif [ $MODEL == *"vit"* ]; then
+    MAX_EPOCH=100
+    WP_EPOCH=5
+    EVAL_EPOCH=5
+    BASE_LR=0.0005
+    LAYER_DECAY=0.65
+    DROP_PATH=0.1
+elif [ $MODEL == *"resnet"* ]; then
+    MAX_EPOCH=100
+    WP_EPOCH=5
+    EVAL_EPOCH=5
+    BASE_LR=0.0001
+    LAYER_DECAY=1.0
+    DROP_PATH=0.1
 else
     MAX_EPOCH=100
     WP_EPOCH=5
@@ -24,15 +49,8 @@ else
     DROP_PATH=0.1
 fi
 
-# Batch size
-BATCH_SIZE=256
 
-# Optimizer config
-OPTIMIZER="adamw"
-MIN_LR=1e-6
-WEIGHT_DECAY=0.05
-
-# Dataset config
+# ------------------- Dataset config -------------------
 DATASET="cifar10"
 if [[ $DATASET == "cifar10" || $DATASET == "cifar100" ]]; then
     # Data root
@@ -56,6 +74,7 @@ else
     echo "Unknown dataset!!"
     exit 1
 fi
+
 
 # ------------------- Training pipeline -------------------
 WORLD_SIZE=1
