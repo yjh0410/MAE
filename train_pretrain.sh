@@ -1,10 +1,10 @@
 # ------------------- Model setting -------------------
-MODEL="mae_resnet18"
+MODEL=$1 #"mae_resnet18"
 
 
 # ------------------- Training setting -------------------
 ## Batch size
-BATCH_SIZE=256
+BATCH_SIZE=$2 #256
 
 ## Epoch
 MAX_EPOCH=800
@@ -35,28 +35,28 @@ fi
 DATASET="imagenet_1k"
 if [[ $DATASET == "cifar10" ]]; then
     # Data root
-    ROOT="none"
+    ROOT=$3 #"none"
     # Image config
     IMG_SIZE=32
     PATCH_SIZE=2
     NUM_CLASSES=10
 elif [[ $DATASET == "cifar100" ]]; then
     # Data root
-    ROOT="none"
+    ROOT=$3 #"none"
     # Image config
     IMG_SIZE=32
     PATCH_SIZE=2
     NUM_CLASSES=100
 elif [[ $DATASET == "imagenet_1k" || $DATASET == "imagenet_22k" ]]; then
     # Data root
-    ROOT="/data/datasets/imagenet-1k/"
+    ROOT=$3 #"/data/datasets/imagenet-1k/"
     # Image config
     IMG_SIZE=224
     PATCH_SIZE=16
     NUM_CLASSES=1000
 elif [[ $DATASET == "custom" ]]; then
     # Data root
-    ROOT="/Users/liuhaoran/Desktop/python_work/classification/dataset/Animals/"
+    ROOT=$3 #"/Users/liuhaoran/Desktop/python_work/classification/dataset/Animals/"
     # Image config
     IMG_SIZE=224
     PATCH_SIZE=16
@@ -68,7 +68,7 @@ fi
 
 
 # ------------------- Training pipeline -------------------
-WORLD_SIZE=$1
+WORLD_SIZE=$4
 if [ $WORLD_SIZE == 1 ]; then
     python main_pretrain.py \
             --cuda \
