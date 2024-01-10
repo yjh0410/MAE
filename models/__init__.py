@@ -2,6 +2,7 @@ import torch
 
 from .vit.build import build_vit, build_mae_vit
 from .resnet.build import build_resnet, build_mae_resnet
+from .rtcnet.build import build_rtcnet, build_mae_rtcnet
 
 
 def build_model(args, is_train=False):
@@ -18,6 +19,13 @@ def build_model(args, is_train=False):
 
     elif args.model in ['mae_resnet18', 'mae_resnet34', 'mae_resnet50', 'mae_resnet101', 'mae_resnet152']:
         model = build_mae_resnet(args, is_train)
+
+    # --------------------------- RTCNet series ---------------------------
+    elif args.model in ['rtcnet_n', 'rtcnet_t', 'rtcnet_s', 'rtcnet_m', 'rtcnet_l', 'rtcnet_x']:
+        model = build_rtcnet(args)
+
+    elif args.model in ['mae_rtcnet_n', 'mae_rtcnet_t', 'mae_rtcnet_s', 'mae_rtcnet_m', 'mae_rtcnet_l', 'mae_rtcnet_x']:
+        model = build_mae_rtcnet(args, is_train)
 
 
     if args.resume is not None:
