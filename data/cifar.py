@@ -5,12 +5,13 @@ from torchvision.datasets import CIFAR10
 
 
 class CifarDataset(data.Dataset):
-    def __init__(self, is_train=False, transform=None):
+    def __init__(self, is_train=False, transform=None, color_format='rgb'):
         super().__init__()
         # ----------------- basic parameters -----------------
         self.pixel_mean = [0.5, 0.5, 0.5]
         self.pixel_std =  [0.5, 0.5, 0.5]
         self.is_train  = is_train
+        self.color_format = color_format
         self.image_set = 'train' if is_train else 'val'
         # ----------------- dataset & transforms -----------------
         self.transform = transform if transform is not None else self.build_transform()
@@ -24,12 +25,20 @@ class CifarDataset(data.Dataset):
     
     def __getitem__(self, index):
         image, target = self.dataset[index]
-
+        if self.color_format == 'bgr':
+            image = image[(2, 1, 0), :, :]
+        elif self.color_format != 'rgb':
+            raise NotImplementedError("Unknown color format: {}.".format(self.color_format))
+            
         return image, target
     
     def pull_image(self, index):
         # laod data
         image, target = self.dataset[index]
+        if self.color_format == 'bgr':
+            image = image[(2, 1, 0), :, :]
+        elif self.color_format != 'rgb':
+            raise NotImplementedError("Unknown color format: {}.".format(self.color_format))
 
         # denormalize image
         image = image.permute(1, 2, 0).numpy()
@@ -58,6 +67,8 @@ if __name__ == "__main__":
     parser.add_argument('--root', default='/Users/liuhaoran/Desktop/python_work/object-detection/dataset/VOCdevkit/',
                         help='data root')
     parser.add_argument('--img_size', default=224, type=int,
+                        help='input image size.')
+    parser.add_argument('--color_format', default='rgb', type=str,
                         help='input image size.')
     args = parser.parse_args()
 
@@ -133,7 +144,7 @@ if __name__ == "__main__":
         return x_masked, mask
   
     # dataset
-    dataset = CifarDataset(is_train=True)  
+    dataset = CifarDataset(is_train=True, color_format=args.color_format)  
     print('Dataset size: ', len(dataset))
 
     for i in range(1000):

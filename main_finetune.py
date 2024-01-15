@@ -44,6 +44,8 @@ def parse_args():
                         help='3 for RGB; 1 for Gray.')    
     parser.add_argument('--patch_size', type=int, default=16,
                         help='patch_size.')    
+    parser.add_argument('--color_format', type=str, default='rgb',
+                        help='color format: rgb or bgr')    
     parser.add_argument('--cuda', action='store_true', default=False,
                         help='use cuda')
     parser.add_argument('--batch_size', type=int, default=256,
@@ -173,6 +175,7 @@ def main():
     print("LOCAL RANK: ", local_rank)
     print("LOCAL_PROCESS_RANL: ", local_process_rank)
 
+
     # ------------------------- Build CUDA -------------------------
     if args.cuda:
         if torch.cuda.is_available():
@@ -185,6 +188,7 @@ def main():
     else:
         device = torch.device("cpu")
 
+
     # ------------------------- Build Tensorboard -------------------------
     tblogger = None
     if local_rank <= 0 and args.tfboard:
@@ -195,9 +199,11 @@ def main():
         os.makedirs(log_path, exist_ok=True)
         tblogger = SummaryWriter(log_path)
 
+
     # ------------------------- Build Dataset -------------------------
     train_dataset = build_dataset(args, is_train=True)
     val_dataset   = build_dataset(args, is_train=False)
+
 
     # ------------------------- Build Dataloader -------------------------
     train_dataloader = build_dataloader(args, train_dataset, is_train=True)
@@ -206,6 +212,7 @@ def main():
     print('=================== Dataset Information ===================')
     print('Train dataset size : ', len(train_dataset))
     print('Val dataset size   : ', len(val_dataset))
+
 
     # ------------------------- Mixup augmentation config -------------------------
     mixup_fn = None
@@ -221,6 +228,7 @@ def main():
                          label_smoothing = args.smoothing,
                          num_classes     = args.num_classes)
 
+
     # ------------------------- Build Model -------------------------
     model = build_model(args)
     model.train().to(device)
@@ -235,11 +243,13 @@ def main():
         # wait for all processes to synchronize
         dist.barrier()
 
+
     # ------------------------- Build DDP Model -------------------------
     model_without_ddp = model
     if args.distributed:
         model = DDP(model, device_ids=[args.gpu])
         model_without_ddp = model.module
+
 
     # ------------------------- Build Optimzier -------------------------
     ## learning rate
@@ -251,9 +261,11 @@ def main():
     ## loss scaler
     loss_scaler = NativeScaler()
 
+
     # ------------------------- Build Lr Scheduler -------------------------
     lf = lambda x: ((1 - math.cos(x * math.pi / args.max_epoch)) / 2) * (args.min_lr / args.base_lr - 1) + 1
     lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
+
 
     # ------------------------- Build Criterion -------------------------
     if mixup_fn is not None:

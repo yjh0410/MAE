@@ -43,6 +43,8 @@ def parse_args():
                         help='patch_size.')    
     parser.add_argument('--mask_ratio', type=float, default=0.75,
                         help='mask ratio.')    
+    parser.add_argument('--color_format', type=str, default='rgb',
+                        help='color format: rgb or bgr')    
     # Basic
     parser.add_argument('--seed', type=int, default=42,
                         help='random seed.')
@@ -122,9 +124,9 @@ def main():
     os.makedirs(path_to_save, exist_ok=True)
     args.output_dir = path_to_save
     
+    
     # ------------------------- Build DDP environment -------------------------
     local_rank = local_process_rank = -1
-    print('World size: {}'.format(distributed_utils.get_world_size()))
     if args.distributed:
         distributed_utils.init_distributed_mode(args)
         print("git:\n  {}\n".format(distributed_utils.get_sha()))
@@ -135,8 +137,10 @@ def main():
         except:
             # Single Mechine & Multiple GPUs (world size <= 8)
             local_rank = local_process_rank = torch.distributed.get_rank()
-
+    print('World size: {}'.format(distributed_utils.get_world_size()))
     print_rank_0(args, local_rank)
+
+
     # ------------------------- Build CUDA -------------------------
     if args.cuda:
         if torch.cuda.is_available():
@@ -160,6 +164,7 @@ def main():
         os.makedirs(log_path, exist_ok=True)
         tblogger = SummaryWriter(log_path)
 
+
     # ------------------------- Build Transforms -------------------------
     train_transform = None
     if 'cifar' not in args.dataset:
@@ -169,14 +174,17 @@ def main():
                 transforms.ToTensor(),
                 transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
     
+
     # ------------------------- Build Dataset -------------------------
     train_dataset = build_dataset(args, transform=train_transform, is_train=True)
+
 
     # ------------------------- Build Dataloader -------------------------
     train_dataloader = build_dataloader(args, train_dataset, is_train=True)
 
     print_rank_0('=================== Dataset Information ===================', local_rank)
     print_rank_0('Train dataset size : {}'.format(len(train_dataset)), local_rank)
+
 
     # ------------------------- Build Model -------------------------
     model = build_model(args, is_train=True)
@@ -191,11 +199,13 @@ def main():
         # wait for all processes to synchronize
         dist.barrier()
 
+
     # ------------------------- Build DDP Model -------------------------
     model_without_ddp = model
     if args.distributed:
         model = DDP(model, device_ids=[args.gpu], find_unused_parameters=True)
         model_without_ddp = model.module
+
 
     # ------------------------- Build Optimzier -------------------------
     ## learning rate
@@ -204,19 +214,23 @@ def main():
     ## modified optimizer
     optimizer = modify_optimizer(model_without_ddp, args.base_lr, args.weight_decay)
 
+
     # ------------------------- Build Loss scaler -------------------------
     loss_scaler = NativeScaler()
     load_model(args=args, model_without_ddp=model_without_ddp, optimizer=optimizer, loss_scaler=loss_scaler)
 
+
     # ------------------------- Build Lr Scheduler -------------------------
     lf = lambda x: ((1 - math.cos(x * math.pi / args.max_epoch)) / 2) * (args.min_lr / args.base_lr - 1) + 1
     lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
+
 
     # ------------------------- Eval before Train Pipeline -------------------------
     if args.eval:
         print('visualizing ...')
         visualize(args, device, model_without_ddp)
         exit(0)
+
 
     # ------------------------- Training Pipeline -------------------------
     start_time = time.time()

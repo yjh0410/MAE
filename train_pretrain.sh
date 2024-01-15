@@ -18,6 +18,7 @@ if [[ $MODEL == *"mae_vit"* ]]; then
     BASE_LR=0.00015
     MIN_LR=0
     WEIGHT_DECAY=0.05
+    COLOR_FORMAT="rgb"
 elif [[ $MODEL == *"mae_resnet"* ]]; then
     MASK_RATIO=0.75
     # Optimizer config
@@ -25,6 +26,7 @@ elif [[ $MODEL == *"mae_resnet"* ]]; then
     BASE_LR=0.00015
     MIN_LR=0
     WEIGHT_DECAY=0.05
+    COLOR_FORMAT="rgb"
 elif [[ $MODEL == *"mae_rtcnet"* ]]; then
     MASK_RATIO=0.75
     # Optimizer config
@@ -32,6 +34,7 @@ elif [[ $MODEL == *"mae_rtcnet"* ]]; then
     BASE_LR=0.00015
     MIN_LR=0
     WEIGHT_DECAY=0.05
+    COLOR_FORMAT="bgr"
 else
     echo "Unknown model!!"
     exit 1
@@ -81,6 +84,7 @@ if [ $WORLD_SIZE == 1 ]; then
             --cuda \
             --root ${ROOT} \
             --dataset ${DATASET} \
+            --color_format ${COLOR_FORMAT} \
             -m ${MODEL} \
             --batch_size ${BATCH_SIZE} \
             --img_size ${IMG_SIZE} \
@@ -99,6 +103,7 @@ elif [[ $WORLD_SIZE -gt 1 && $WORLD_SIZE -le 8 ]]; then
             -dist \
             --root ${ROOT} \
             --dataset ${DATASET} \
+            --color_format ${COLOR_FORMAT} \
             -m ${MODEL} \
             --batch_size ${BATCH_SIZE} \
             --img_size ${IMG_SIZE} \

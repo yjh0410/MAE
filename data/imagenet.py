@@ -9,13 +9,14 @@ import torchvision.transforms as transforms
 
 
 class ImageNet1KDataset(data.Dataset):
-    def __init__(self, args, is_train=False, transform=None):
+    def __init__(self, args, is_train=False, transform=None, color_format='rgb', pixel_statistic=False):
         super().__init__()
         # ----------------- basic parameters -----------------
         self.args = args
-        self.pixel_mean = [0.485, 0.456, 0.406]
-        self.pixel_std = [0.229, 0.224, 0.225]
+        self.pixel_mean = [0.485, 0.456, 0.406] if pixel_statistic else [0, 0, 0]
+        self.pixel_std = [0.229, 0.224, 0.225]  if pixel_statistic else [1, 1, 1]
         self.is_train  = is_train
+        self.color_format = color_format
         self.image_set = 'train' if is_train else 'val'
         self.data_path = os.path.join(args.root, self.image_set)
         # ----------------- dataset & transforms -----------------
@@ -27,12 +28,20 @@ class ImageNet1KDataset(data.Dataset):
     
     def __getitem__(self, index):
         image, target = self.dataset[index]
+        if self.color_format == 'bgr':
+            image = image[(2, 1, 0), :, :]
+        elif self.color_format != 'rgb':
+            raise NotImplementedError("Unknown color format: {}.".format(self.color_format))
 
         return image, target
     
     def pull_image(self, index):
         # laod data
         image, target = self.dataset[index]
+        if self.color_format == 'bgr':
+            image = image[(2, 1, 0), :, :]
+        elif self.color_format != 'rgb':
+            raise NotImplementedError("Unknown color format: {}.".format(self.color_format))
 
         # denormalize image
         image = image.permute(1, 2, 0).numpy()
