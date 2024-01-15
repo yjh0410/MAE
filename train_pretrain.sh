@@ -25,6 +25,13 @@ elif [[ $MODEL == *"mae_resnet"* ]]; then
     BASE_LR=0.00015
     MIN_LR=0
     WEIGHT_DECAY=0.05
+elif [[ $MODEL == *"mae_rtcnet"* ]]; then
+    MASK_RATIO=0.75
+    # Optimizer config
+    OPTIMIZER="adamw"
+    BASE_LR=0.00015
+    MIN_LR=0
+    WEIGHT_DECAY=0.05
 else
     echo "Unknown model!!"
     exit 1
