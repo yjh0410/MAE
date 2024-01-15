@@ -13,9 +13,11 @@ class ImageNet1KDataset(data.Dataset):
         super().__init__()
         # ----------------- basic parameters -----------------
         self.args = args
+        self.is_train  = is_train
         self.pixel_mean = [0.485, 0.456, 0.406] if pixel_statistic else [0, 0, 0]
         self.pixel_std = [0.229, 0.224, 0.225]  if pixel_statistic else [1, 1, 1]
-        self.is_train  = is_train
+        print("Pixel mean: {}".format(self.pixel_mean))
+        print("Pixel std:  {}".format(self.pixel_std))
         self.color_format = color_format
         self.image_set = 'train' if is_train else 'val'
         self.data_path = os.path.join(args.root, self.image_set)
