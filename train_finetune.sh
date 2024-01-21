@@ -1,6 +1,6 @@
 # ------------------- Model setting -------------------
 MODEL="vit_tiny"
-MAE_PRETRAINED_MODEL="weights/cifar10/mae_vit_tiny/checkpoint-799.pth"
+PRETRAINED_MODEL="weights/cifar10/mae_vit_tiny/checkpoint-799.pth"
 
 
 # ------------------- Training setting -------------------
@@ -99,7 +99,7 @@ if [ $WORLD_SIZE == 1 ]; then
             --reprob 0.25 \
             --mixup 0.8 \
             --cutmix 1.0 \
-            --mae_pretrained ${MAE_PRETRAINED_MODEL}
+            --pretrained ${PRETRAINED_MODEL}
 elif [[ $WORLD_SIZE -gt 1 && $WORLD_SIZE -le 8 ]]; then
     python -m torch.distributed.run --nproc_per_node=${WORLD_SIZE} --master_port 1668 main_finetune.py \
             --cuda \
@@ -122,7 +122,7 @@ elif [[ $WORLD_SIZE -gt 1 && $WORLD_SIZE -le 8 ]]; then
             --reprob 0.25 \
             --mixup 0.8 \
             --cutmix 1.0 \
-            --mae_pretrained ${MAE_PRETRAINED_MODEL}
+            --pretrained ${PRETRAINED_MODEL}
 else
     echo "The WORLD_SIZE is set to a value greater than 8, indicating the use of multi-machine \
           multi-card training mode, which is currently unsupported."

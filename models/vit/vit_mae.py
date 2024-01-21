@@ -7,8 +7,9 @@ try:
 except:
     from .vit_modules import ViTBlock
 
+
 # ------------------------ Basic Modules ------------------------
-## Masked ViT Encoder
+## Masked Image Modeling (MIM) ViT Encoder
 class MAE_ViT_Encoder(nn.Module):
     def __init__(self,
                  img_size      :int   = 224,
