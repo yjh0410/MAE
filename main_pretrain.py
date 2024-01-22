@@ -144,7 +144,7 @@ def main():
     # ------------------------- Build CUDA -------------------------
     if args.cuda:
         if torch.cuda.is_available():
-            # cudnn.benchmark = True
+            cudnn.benchmark = True
             device = torch.device("cuda")
         else:
             print('There is no available GPU.')
