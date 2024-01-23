@@ -36,7 +36,7 @@ def build_model(args, is_train=False):
         model = build_mae_rtcnet(args, is_train)
 
 
-    if args.resume is not None:
+    if args.resume and args.resume.lower() != 'none':
         print('loading trained weight for <{}> from <{}>: '.format(args.model, args.resume))
         checkpoint = torch.load(args.resume, map_location='cpu')
         # checkpoint state dict
