@@ -21,10 +21,10 @@ if [[ $MODEL == *"mae_vit"* ]]; then
     EVAL_EPOCH=20
 elif [[ $MODEL == *"mae_resnet"* ]]; then
     COLOR_FORMAT="rgb"
-    MASK_RATIO=0.75
+    MASK_RATIO=0.6
     # Optimizer config
     OPTIMIZER="adamw"
-    BASE_LR=0.00015
+    BASE_LR=0.0001
     MIN_LR=0
     WEIGHT_DECAY=0.05
     # Epoch
@@ -33,10 +33,10 @@ elif [[ $MODEL == *"mae_resnet"* ]]; then
     EVAL_EPOCH=10
 elif [[ $MODEL == *"mae_rtcnet"* ]]; then
     COLOR_FORMAT="bgr"
-    MASK_RATIO=0.75
+    MASK_RATIO=0.6
     # Optimizer config
     OPTIMIZER="adamw"
-    BASE_LR=0.00015
+    BASE_LR=0.0001
     MIN_LR=0
     WEIGHT_DECAY=0.05
     # Epoch
