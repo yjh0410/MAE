@@ -210,7 +210,9 @@ def main():
     # ------------------------- Build Optimzier -------------------------
     ## learning rate
     args.base_lr = args.base_lr / 256 * args.batch_size * args.grad_accumulate  # auto scale lr
-    args.min_lr  = args.min_lr  / 256 * args.batch_size * args.grad_accumulate    # auto scale lr
+    args.min_lr  = args.min_lr  / 256 * args.batch_size * args.grad_accumulate  # auto scale lr
+    print('Base lr: ', args.base_lr)
+    print('Mun  lr: ', args.min_lr)
     ## modified optimizer
     optimizer = modify_optimizer(model_without_ddp, args.base_lr, args.weight_decay)
 
