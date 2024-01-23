@@ -4,6 +4,7 @@ BATCH_SIZE=$2
 DATASET=$3
 DATASET_ROOT=$4
 WORLD_SIZE=$5
+RESUME=$6
 
 # ------------------- Training setting -------------------
 ## Epoch
@@ -70,7 +71,8 @@ if [ $WORLD_SIZE == 1 ]; then
             --root ${DATASET_ROOT} \
             --dataset ${DATASET} \
             --color_format ${COLOR_FORMAT} \
-            -m ${MODEL} \
+            --model ${MODEL} \
+            --resume ${RESUME} \
             --batch_size ${BATCH_SIZE} \
             --img_size ${IMG_SIZE} \
             --patch_size ${PATCH_SIZE} \
@@ -89,7 +91,8 @@ elif [[ $WORLD_SIZE -gt 1 && $WORLD_SIZE -le 8 ]]; then
             --root ${DATASET_ROOT} \
             --dataset ${DATASET} \
             --color_format ${COLOR_FORMAT} \
-            -m ${MODEL} \
+            --model ${MODEL} \
+            --resume ${RESUME} \
             --batch_size ${BATCH_SIZE} \
             --img_size ${IMG_SIZE} \
             --patch_size ${PATCH_SIZE} \

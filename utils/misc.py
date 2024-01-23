@@ -204,7 +204,7 @@ class MetricLogger(object):
 
 
 # ---------------------- Optimize functions ----------------------
-def modify_optimizer(model, base_lr, weight_decay):
+def modify_optimizer(model, base_lr, weight_decay, resume=None):
     g = [], [], []  # optimizer parameter groups
     bn = tuple(v for k, v in nn.__dict__.items() if 'Norm' in k)  # normalization layers, i.e. BatchNorm2d()
     for v in model.modules():
@@ -220,7 +220,16 @@ def modify_optimizer(model, base_lr, weight_decay):
     optimizer.add_param_group({'params': g[0], 'weight_decay': weight_decay})  # add g0 with weight_decay
     optimizer.add_param_group({'params': g[1], 'weight_decay': 0.0})           # add g1 (norm layer weights)
 
-    return optimizer
+    start_epoch = 0
+    if resume is not None:
+        print('keep training: ', resume)
+        checkpoint = torch.load(resume)
+        # checkpoint state dict
+        checkpoint_state_dict = checkpoint.pop("optimizer")
+        optimizer.load_state_dict(checkpoint_state_dict)
+        start_epoch = checkpoint.pop("epoch") + 1
+                                                        
+    return optimizer, start_epoch
 
 def get_grad_norm_(parameters, norm_type: float = 2.0) -> torch.Tensor:
     if isinstance(parameters, torch.Tensor):
