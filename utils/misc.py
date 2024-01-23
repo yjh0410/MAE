@@ -221,13 +221,14 @@ def modify_optimizer(model, base_lr, weight_decay, resume=None):
     optimizer.add_param_group({'params': g[1], 'weight_decay': 0.0})           # add g1 (norm layer weights)
 
     start_epoch = 0
-    if resume is not None:
+    if resume and resume != "None":
         print('keep training: ', resume)
-        checkpoint = torch.load(resume)
+        checkpoint = torch.load(resume, map_location='cpu')
         # checkpoint state dict
         checkpoint_state_dict = checkpoint.pop("optimizer")
         optimizer.load_state_dict(checkpoint_state_dict)
         start_epoch = checkpoint.pop("epoch") + 1
+        del checkpoint, checkpoint_state_dict
                                                         
     return optimizer, start_epoch
 

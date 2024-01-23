@@ -7,34 +7,42 @@ WORLD_SIZE=$5
 RESUME=$6
 
 # ------------------- Training setting -------------------
-## Epoch
-MAX_EPOCH=800
-WP_EPOCH=40
-EVAL_EPOCH=20
 if [[ $MODEL == *"mae_vit"* ]]; then
+    COLOR_FORMAT="rgb"
     MASK_RATIO=0.75
     # Optimizer config
     OPTIMIZER="adamw"
     BASE_LR=0.00015
     MIN_LR=0
     WEIGHT_DECAY=0.05
-    COLOR_FORMAT="rgb"
+    # Epoch
+    MAX_EPOCH=800
+    WP_EPOCH=40
+    EVAL_EPOCH=20
 elif [[ $MODEL == *"mae_resnet"* ]]; then
-    MASK_RATIO=0.75
-    # Optimizer config
-    OPTIMIZER="adamw"
-    BASE_LR=0.00015
-    MIN_LR=0
-    WEIGHT_DECAY=0.05
     COLOR_FORMAT="rgb"
-elif [[ $MODEL == *"mae_rtcnet"* ]]; then
     MASK_RATIO=0.75
     # Optimizer config
     OPTIMIZER="adamw"
     BASE_LR=0.00015
     MIN_LR=0
     WEIGHT_DECAY=0.05
+    # Epoch
+    MAX_EPOCH=100
+    WP_EPOCH=10
+    EVAL_EPOCH=10
+elif [[ $MODEL == *"mae_rtcnet"* ]]; then
     COLOR_FORMAT="bgr"
+    MASK_RATIO=0.75
+    # Optimizer config
+    OPTIMIZER="adamw"
+    BASE_LR=0.00015
+    MIN_LR=0
+    WEIGHT_DECAY=0.05
+    # Epoch
+    MAX_EPOCH=100
+    WP_EPOCH=10
+    EVAL_EPOCH=10
 else
     echo "Unknown model!!"
     exit 1
