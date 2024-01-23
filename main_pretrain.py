@@ -212,7 +212,7 @@ def main():
     args.base_lr = args.base_lr / 256 * args.batch_size * args.grad_accumulate  # auto scale lr
     args.min_lr  = args.min_lr  / 256 * args.batch_size * args.grad_accumulate    # auto scale lr
     ## modified optimizer
-    optimizer, start_epoch = modify_optimizer(model_without_ddp, args.base_lr, args.weight_decay, args.resume)
+    optimizer = modify_optimizer(model_without_ddp, args.base_lr, args.weight_decay)
 
 
     # ------------------------- Build Loss scaler -------------------------
@@ -223,9 +223,6 @@ def main():
     # ------------------------- Build Lr Scheduler -------------------------
     lf = lambda x: ((1 - math.cos(x * math.pi / args.max_epoch)) / 2) * (args.min_lr / args.base_lr - 1) + 1
     lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
-    lr_scheduler.last_epoch = start_epoch - 1  # do not move
-    if args.resume and args.resume.lower() != 'none':
-        lr_scheduler.step()
 
 
     # ------------------------- Eval before Train Pipeline -------------------------
@@ -238,7 +235,7 @@ def main():
     # ------------------------- Training Pipeline -------------------------
     start_time = time.time()
     print_rank_0("=============== Start training for {} epochs ===============".format(args.max_epoch), local_rank)
-    for epoch in range(start_epoch, args.max_epoch):
+    for epoch in range(args.start_epoch, args.max_epoch):
         # Train one epoch
         if args.distributed:
             train_dataloader.batch_sampler.sampler.set_epoch(epoch)

@@ -204,7 +204,7 @@ class MetricLogger(object):
 
 
 # ---------------------- Optimize functions ----------------------
-def modify_optimizer(model, base_lr, weight_decay, resume=None):
+def modify_optimizer(model, base_lr, weight_decay):
     g = [], [], []  # optimizer parameter groups
     bn = tuple(v for k, v in nn.__dict__.items() if 'Norm' in k)  # normalization layers, i.e. BatchNorm2d()
     for v in model.modules():
@@ -219,18 +219,8 @@ def modify_optimizer(model, base_lr, weight_decay, resume=None):
 
     optimizer.add_param_group({'params': g[0], 'weight_decay': weight_decay})  # add g0 with weight_decay
     optimizer.add_param_group({'params': g[1], 'weight_decay': 0.0})           # add g1 (norm layer weights)
-
-    start_epoch = 0
-    if resume and resume != "None":
-        print('keep training: ', resume)
-        checkpoint = torch.load(resume, map_location='cpu')
-        # checkpoint state dict
-        checkpoint_state_dict = checkpoint.pop("optimizer")
-        optimizer.load_state_dict(checkpoint_state_dict)
-        start_epoch = checkpoint.pop("epoch") + 1
-        del checkpoint, checkpoint_state_dict
                                                         
-    return optimizer, start_epoch
+    return optimizer
 
 def get_grad_norm_(parameters, norm_type: float = 2.0) -> torch.Tensor:
     if isinstance(parameters, torch.Tensor):
@@ -330,7 +320,7 @@ class ModelEMA(object):
                     v += (1. - d) * msd[k].detach()
 
 def load_model(args, model_without_ddp, optimizer, loss_scaler):
-    if args.resume:
+    if args.resume and args.resume.lower() != 'none':
         if args.resume.startswith('https'):
             checkpoint = torch.hub.load_state_dict_from_url(
                 args.resume, map_location='cpu', check_hash=True)
