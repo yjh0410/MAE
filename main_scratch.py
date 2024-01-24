@@ -250,10 +250,10 @@ def main():
     if "vit" in args.model:
         # For ViT
         param_groups = lr_decay.param_groups_lrd(model_without_ddp, args.weight_decay, model_without_ddp.no_weight_decay(), args.layer_decay)
+        optimizer = torch.optim.AdamW(param_groups, lr=args.base_lr, betas=[0.9, 0.95])
     else:
         # For CNN
-        param_groups = model_without_ddp.named_parameters()
-    optimizer = torch.optim.AdamW(param_groups, lr=args.base_lr, betas=[0.9, 0.95])
+        optimizer = torch.optim.AdamW(model_without_ddp.parameters(), lr=args.base_lr, betas=[0.9, 0.95], weight_decay=args.weight_decay)
     ## loss scaler
     loss_scaler = NativeScaler()
 
