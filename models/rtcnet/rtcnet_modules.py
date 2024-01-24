@@ -75,6 +75,30 @@ class Conv(nn.Module):
 
 
 # --------------------- Yolov8 modules ---------------------
+## Convolutional Multi-Layer Perceptron
+class ConvMLP(nn.Module):
+    """ Very simple multi-layer perceptron (also called FFN)"""
+
+    def __init__(self,
+                 in_dim     :int,
+                 hidden_dim :int,
+                 out_dim    :int,
+                 drop       :float = 0.):
+        super().__init__()
+        self.fc1 = nn.Conv2d(in_dim, hidden_dim, kernel_size=1)
+        self.act = nn.SiLU(inplace=True)
+        self.drop1 = nn.Dropout2d(drop)
+        self.fc2 = nn.Conv2d(hidden_dim, out_dim, kernel_size=1)
+        self.drop2 = nn.Dropout2d(drop)
+
+    def forward(self, x):
+        x = self.fc1(x)
+        x = self.act(x)
+        x = self.drop1(x)
+        x = self.fc2(x)
+        x = self.drop2(x)
+        return x
+
 ## Yolov8-style BottleNeck
 class Bottleneck(nn.Module):
     def __init__(self,
