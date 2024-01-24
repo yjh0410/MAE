@@ -78,7 +78,7 @@ class ImageNet1KDataset(data.Dataset):
             )
             t.append(T.CenterCrop(args.img_size))
             t.append(T.ToTensor())
-            t.append(t.Normalize(self.pixel_mean, self.pixel_std))
+            t.append(T.Normalize(self.pixel_mean, self.pixel_std))
             transforms = T.Compose(t)
 
         return transforms
