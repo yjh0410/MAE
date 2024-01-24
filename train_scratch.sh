@@ -67,6 +67,7 @@ elif [ $MODEL == *"rtcnet"* ]; then
     MIN_LR=1e-6
     WEIGHT_DECAY=0.05
 else
+    COLOR_FORMAT="bgr"
     MAX_EPOCH=300
     WP_EPOCH=20
     EVAL_EPOCH=10
