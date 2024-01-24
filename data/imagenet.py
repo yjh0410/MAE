@@ -63,8 +63,8 @@ class ImageNet1KDataset(data.Dataset):
                                           re_prob       = args.reprob,
                                           re_mode       = args.remode,
                                           re_count      = args.recount,
-                                          mean          = self.mean,
-                                          std           = self.std,
+                                          mean          = self.pixel_mean,
+                                          std           = self.pixel_std,
                                           )
         else:
             t = []
@@ -78,7 +78,7 @@ class ImageNet1KDataset(data.Dataset):
             )
             t.append(T.CenterCrop(args.img_size))
             t.append(T.ToTensor())
-            t.append(t.Normalize(self.mean, self.std))
+            t.append(t.Normalize(self.pixel_mean, self.pixel_std))
             transforms = T.Compose(t)
 
         return transforms
