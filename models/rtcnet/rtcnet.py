@@ -66,6 +66,9 @@ class RTCBackbone(nn.Module):
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(self.feat_dims[4], num_classes)
 
+    @torch.jit.ignore
+    def no_weight_decay(self):
+        return []
 
     def forward(self, x):
         c1 = self.layer_1(x)
