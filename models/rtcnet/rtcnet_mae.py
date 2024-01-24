@@ -5,9 +5,9 @@ import torch.nn as nn
 from torch import Tensor
 
 try:
-    from .rtcnet_modules import Conv, RTCBlock
+    from .rtcnet_modules import Conv, RTCBlock, ConvMLP
 except:
-    from rtcnet_modules import Conv, RTCBlock
+    from rtcnet_modules import Conv, RTCBlock, ConvMLP
    
 
 ## Real-time Convolutional Backbone
@@ -23,7 +23,9 @@ class MAE_RTCBackbone(nn.Module):
                  mask_patch_size: int = 32,
                  mask_ratio: float = 0.75,
                  is_train: bool = False,
-                 norm_pix_loss: bool = False
+                 norm_pix_loss: bool = False,
+                 de_num_layers: int = 12,
+                 dropout: float = 0.1,
                  ):
         super(MAE_RTCBackbone, self).__init__()
         # ---------------- Basic parameters ----------------
@@ -84,7 +86,9 @@ class MAE_RTCBackbone(nn.Module):
                      depthwise  = depthwise)
         )
         ## Out layer
-        self.output_proj = nn.Conv2d(self.feat_dims[4], in_channels * self.out_stride ** 2, kernel_size=1)
+        decoder = [ConvMLP(self.feat_dims[4], self.feat_dims[4] * 4, self.feat_dims[4], 0) for _ in range(de_num_layers)] +\
+                  [nn.Conv2d(self.feat_dims[4], in_channels * self.out_stride ** 2, kernel_size=1)]
+        self.decoder = nn.Sequential(*decoder)
 
     def patchify(self, imgs, patch_size):
         """
@@ -183,7 +187,7 @@ class MAE_RTCBackbone(nn.Module):
         c4 = self.layer_4(c3)
         c5 = self.layer_5(c4)
 
-        x = self.output_proj(c5)
+        x = self.decoder(c5)
 
         # Reshape: [B, C, H, W] -> [B, N, C]
         x = x.flatten(2).permute(0, 2, 1).contiguous()
@@ -215,7 +219,9 @@ def mae_rtcnet_n(in_channels, mask_patch_size, mask_ratio, is_train=False, norm_
                            mask_patch_size=mask_patch_size,
                            mask_ratio=mask_ratio,
                            is_train=is_train,
-                           norm_pix_loss=norm_pix_loss
+                           norm_pix_loss=norm_pix_loss,
+                           de_num_layers=12,
+                           dropout=0.1
                            )
 
 def mae_rtcnet_t(in_channels, mask_patch_size, mask_ratio, is_train=False, norm_pix_loss=False) -> MAE_RTCBackbone:
@@ -229,7 +235,9 @@ def mae_rtcnet_t(in_channels, mask_patch_size, mask_ratio, is_train=False, norm_
                            mask_patch_size=mask_patch_size,
                            mask_ratio=mask_ratio,
                            is_train=is_train,
-                           norm_pix_loss=norm_pix_loss
+                           norm_pix_loss=norm_pix_loss,
+                           de_num_layers=8,
+                           dropout=0.1
                            )
 
 def mae_rtcnet_s(in_channels, mask_patch_size, mask_ratio, is_train=False, norm_pix_loss=False) -> MAE_RTCBackbone:
@@ -243,7 +251,9 @@ def mae_rtcnet_s(in_channels, mask_patch_size, mask_ratio, is_train=False, norm_
                            mask_patch_size=mask_patch_size,
                            mask_ratio=mask_ratio,
                            is_train=is_train,
-                           norm_pix_loss=norm_pix_loss
+                           norm_pix_loss=norm_pix_loss,
+                           de_num_layers=8,
+                           dropout=0.1
                            )
 
 def mae_rtcnet_m(in_channels, mask_patch_size, mask_ratio, is_train=False, norm_pix_loss=False) -> MAE_RTCBackbone:
@@ -257,7 +267,9 @@ def mae_rtcnet_m(in_channels, mask_patch_size, mask_ratio, is_train=False, norm_
                            mask_patch_size=mask_patch_size,
                            mask_ratio=mask_ratio,
                            is_train=is_train,
-                           norm_pix_loss=norm_pix_loss
+                           norm_pix_loss=norm_pix_loss,
+                           de_num_layers=8,
+                           dropout=0.1
                            )
 
 def mae_rtcnet_l(in_channels, mask_patch_size, mask_ratio, is_train=False, norm_pix_loss=False) -> MAE_RTCBackbone:
@@ -271,7 +283,9 @@ def mae_rtcnet_l(in_channels, mask_patch_size, mask_ratio, is_train=False, norm_
                            mask_patch_size=mask_patch_size,
                            mask_ratio=mask_ratio,
                            is_train=is_train,
-                           norm_pix_loss=norm_pix_loss
+                           norm_pix_loss=norm_pix_loss,
+                           de_num_layers=8,
+                           dropout=0.1
                            )
 
 def mae_rtcnet_x(in_channels, mask_patch_size, mask_ratio, is_train=False, norm_pix_loss=False) -> MAE_RTCBackbone:
@@ -285,7 +299,9 @@ def mae_rtcnet_x(in_channels, mask_patch_size, mask_ratio, is_train=False, norm_
                            mask_patch_size=mask_patch_size,
                            mask_ratio=mask_ratio,
                            is_train=is_train,
-                           norm_pix_loss=norm_pix_loss
+                           norm_pix_loss=norm_pix_loss,
+                           de_num_layers=8,
+                           dropout=0.1
                            )
 
 
@@ -297,7 +313,7 @@ if __name__ == '__main__':
 
     # build model
     bs, c, h, w = 2, 3, 224, 224
-    is_train = True
+    is_train = False
     x = torch.randn(bs, c, h, w)
     model = mae_rtcnet_l(in_channels=3, mask_patch_size=16, mask_ratio=0.75, is_train=is_train)
 
