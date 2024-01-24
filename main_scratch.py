@@ -159,7 +159,6 @@ def main():
     ## LOCAL_RANK is the global GPU number tag, the value range is [0, world_size - 1].
     ## LOCAL_PROCESS_RANK is the number of the GPU of each machine, not global.
     local_rank = local_process_rank = -1
-    print('World size: {}'.format(distributed_utils.get_world_size()))
     if args.distributed:
         distributed_utils.init_distributed_mode(args)
         print("git:\n  {}\n".format(distributed_utils.get_sha()))
@@ -171,6 +170,7 @@ def main():
             # Single Mechine & Multiple GPUs (world size <= 8)
             local_rank = local_process_rank = torch.distributed.get_rank()
     print_rank_0(args, local_rank)
+    print('World size: {}'.format(distributed_utils.get_world_size()))
     print("LOCAL RANK: ", local_rank)
     print("LOCAL_PROCESS_RANL: ", local_process_rank)
 

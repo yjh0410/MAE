@@ -55,7 +55,7 @@ class ImageNet1KDataset(data.Dataset):
 
     def build_transform(self, args):
         if self.is_train:
-            transforms = create_transform(input_size    = args.input_size,
+            transforms = create_transform(input_size    = args.img_size,
                                           is_training   = True,
                                           color_jitter  = args.color_jitter,
                                           auto_augment  = args.aa,
@@ -68,15 +68,15 @@ class ImageNet1KDataset(data.Dataset):
                                           )
         else:
             t = []
-            if args.input_size <= 224:
+            if args.img_size <= 224:
                 crop_pct = 224 / 256
             else:
                 crop_pct = 1.0
-            size = int(args.input_size / crop_pct)
+            size = int(args.img_size / crop_pct)
             t.append(
                 T.Resize(size, interpolation=PIL.Image.BICUBIC),  # to maintain same ratio w.r.t. 224 images
             )
-            t.append(T.CenterCrop(args.input_size))
+            t.append(T.CenterCrop(args.img_size))
             t.append(T.ToTensor())
             t.append(t.Normalize(self.mean, self.std))
             transforms = T.Compose(t)
