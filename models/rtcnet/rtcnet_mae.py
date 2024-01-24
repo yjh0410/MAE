@@ -191,7 +191,6 @@ class MAE_RTCBackbone(nn.Module):
         c5 = self.layer_5(c4)
 
         x = self.decoder(c5)
-        print(x.shape)
 
         # Reshape: [B, C, H, W] -> [B, N, C]
         x = x.flatten(2).permute(0, 2, 1).contiguous()
