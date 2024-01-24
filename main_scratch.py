@@ -169,7 +169,8 @@ def main():
         except:
             # Single Mechine & Multiple GPUs (world size <= 8)
             local_rank = local_process_rank = torch.distributed.get_rank()
-    print_rank_0(args, local_rank)
+    print_rank_0(args)
+    args.world_size = distributed_utils.get_world_size()
     print('World size: {}'.format(distributed_utils.get_world_size()))
     print("LOCAL RANK: ", local_rank)
     print("LOCAL_PROCESS_RANL: ", local_process_rank)
