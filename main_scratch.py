@@ -247,7 +247,12 @@ def main():
     args.base_lr = args.base_lr / 256 * args.batch_size * args.grad_accumulate    # auto scale lr
     args.min_lr  = args.min_lr  / 256 * args.batch_size * args.grad_accumulate    # auto scale lr
     ## optimizer
-    param_groups = lr_decay.param_groups_lrd(model_without_ddp, args.weight_decay, model_without_ddp.no_weight_decay(), args.layer_decay)
+    if "vit" in args.model:
+        # For ViT
+        param_groups = lr_decay.param_groups_lrd(model_without_ddp, args.weight_decay, model_without_ddp.no_weight_decay(), args.layer_decay)
+    else:
+        # For CNN
+        param_groups = model_without_ddp.named_parameters()
     optimizer = torch.optim.AdamW(param_groups, lr=args.base_lr, betas=[0.9, 0.95])
     ## loss scaler
     loss_scaler = NativeScaler()
