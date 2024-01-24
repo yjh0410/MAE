@@ -247,6 +247,8 @@ def main():
     ## learning rate
     args.base_lr = args.base_lr / 256 * args.batch_size * args.grad_accumulate    # auto scale lr
     args.min_lr  = args.min_lr  / 256 * args.batch_size * args.grad_accumulate    # auto scale lr
+    print('Base lr: ', args.base_lr)
+    print('Mun  lr: ', args.min_lr)
     ## optimizer
     if "vit" in args.model:
         # For ViT
