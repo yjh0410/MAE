@@ -103,7 +103,7 @@ WORLD_SIZE=1
 if [ $WORLD_SIZE == 1 ]; then
     python main_scratch.py \
             --cuda \
-            --root ${DATA_ROOT} \
+            --root ${DATASET_ROOT} \
             --dataset ${DATASET} \
             --model ${MODEL} \
             --batch_size ${BATCH_SIZE} \
@@ -125,7 +125,7 @@ elif [[ $WORLD_SIZE -gt 1 && $WORLD_SIZE -le 8 ]]; then
     python -m torch.distributed.run --nproc_per_node=${WORLD_SIZE} --master_port 1668 main_scratch.py \
             --cuda \
             -dist \
-            --root ${DATA_ROOT} \
+            --root ${DATASET_ROOT} \
             --dataset ${DATASET} \
             --model ${MODEL} \
             --batch_size ${BATCH_SIZE} \
