@@ -223,7 +223,7 @@ def mae_rtcnet_n(in_channels, mask_patch_size, mask_ratio, is_train=False, norm_
                            mask_ratio=mask_ratio,
                            is_train=is_train,
                            norm_pix_loss=norm_pix_loss,
-                           de_num_layers=8,
+                           de_num_layers=12,
                            dropout=0.1
                            )
 
