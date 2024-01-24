@@ -104,7 +104,6 @@ fi
 
 
 # ------------------- Training pipeline -------------------
-WORLD_SIZE=1
 if [ $WORLD_SIZE == 1 ]; then
     python main_scratch.py \
             --cuda \
