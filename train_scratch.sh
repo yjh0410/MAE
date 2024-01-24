@@ -7,6 +7,7 @@ WORLD_SIZE=$5
 
 # ------------------- Training setting -------------------
 if [ $MODEL == "vit_huge" ]; then
+    COLOR_FORMAT="rgb"
     MAX_EPOCH=200
     WP_EPOCH=20
     EVAL_EPOCH=10
@@ -18,6 +19,7 @@ if [ $MODEL == "vit_huge" ]; then
     MIN_LR=1e-6
     WEIGHT_DECAY=0.3
 elif [ $MODEL == "vit_large" ]; then
+    COLOR_FORMAT="rgb"
     MAX_EPOCH=200
     WP_EPOCH=20
     EVAL_EPOCH=10
@@ -29,6 +31,7 @@ elif [ $MODEL == "vit_large" ]; then
     MIN_LR=1e-6
     WEIGHT_DECAY=0.3
 elif [ $MODEL == *"vit"* ]; then
+    COLOR_FORMAT="rgb"
     MAX_EPOCH=300
     WP_EPOCH=20
     EVAL_EPOCH=10
@@ -40,6 +43,7 @@ elif [ $MODEL == *"vit"* ]; then
     MIN_LR=1e-6
     WEIGHT_DECAY=0.3
 elif [ $MODEL == *"resnet"* ]; then
+    COLOR_FORMAT="rgb"
     MAX_EPOCH=300
     WP_EPOCH=20
     EVAL_EPOCH=10
@@ -51,6 +55,7 @@ elif [ $MODEL == *"resnet"* ]; then
     MIN_LR=1e-6
     WEIGHT_DECAY=0.05
 elif [ $MODEL == *"rtcnet"* ]; then
+    COLOR_FORMAT="bgr"
     MAX_EPOCH=300
     WP_EPOCH=20
     EVAL_EPOCH=10
@@ -105,6 +110,7 @@ if [ $WORLD_SIZE == 1 ]; then
             --cuda \
             --root ${DATASET_ROOT} \
             --dataset ${DATASET} \
+            --color_format ${COLOR_FORMAT} \
             --model ${MODEL} \
             --batch_size ${BATCH_SIZE} \
             --img_size ${IMG_SIZE} \
@@ -127,6 +133,7 @@ elif [[ $WORLD_SIZE -gt 1 && $WORLD_SIZE -le 8 ]]; then
             -dist \
             --root ${DATASET_ROOT} \
             --dataset ${DATASET} \
+            --color_format ${COLOR_FORMAT} \
             --model ${MODEL} \
             --batch_size ${BATCH_SIZE} \
             --img_size ${IMG_SIZE} \

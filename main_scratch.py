@@ -35,15 +35,18 @@ from engine_finetune import train_one_epoch, evaluate
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    # Basic
-    parser.add_argument('--seed', type=int, default=42,
-                        help='random seed.')
+    # Input
     parser.add_argument('--img_size', type=int, default=224,
                         help='input image size.')    
     parser.add_argument('--img_dim', type=int, default=3,
                         help='3 for RGB; 1 for Gray.')    
     parser.add_argument('--patch_size', type=int, default=16,
                         help='patch_size.')    
+    parser.add_argument('--color_format', type=str, default='rgb',
+                        help='color format: rgb or bgr')    
+    # Basic
+    parser.add_argument('--seed', type=int, default=42,
+                        help='random seed.')
     parser.add_argument('--cuda', action='store_true', default=False,
                         help='use cuda')
     parser.add_argument('--batch_size', type=int, default=256,
