@@ -43,44 +43,10 @@ elif [ $MODEL == *"vit"* ]; then
     BASE_LR=1e-4
     MIN_LR=1e-6
     WEIGHT_DECAY=0.3
-elif [ $MODEL == *"resnet"* ]; then
-    COLOR_FORMAT="rgb"
-    MAX_EPOCH=300
-    WP_EPOCH=20
-    EVAL_EPOCH=10
-    LAYER_DECAY=1.0
-    DROP_PATH=0.1
-    # Optimizer config
-    OPTIMIZER="adamw"
-    BASE_LR=1e-4
-    MIN_LR=1e-6
-    WEIGHT_DECAY=0.05
-elif [ $MODEL == *"rtcnet"* ]; then
-    COLOR_FORMAT="bgr"
-    MAX_EPOCH=300
-    WP_EPOCH=20
-    EVAL_EPOCH=10
-    LAYER_DECAY=1.0
-    DROP_PATH=0.1
-    # Optimizer config
-    OPTIMIZER="adamw"
-    BASE_LR=1e-4
-    MIN_LR=1e-6
-    WEIGHT_DECAY=0.05
 else
-    COLOR_FORMAT="bgr"
-    MAX_EPOCH=300
-    WP_EPOCH=20
-    EVAL_EPOCH=10
-    LAYER_DECAY=1.0
-    DROP_PATH=0.1
-    # Optimizer config
-    OPTIMIZER="adamw"
-    BASE_LR=1e-4
-    MIN_LR=1e-6
-    WEIGHT_DECAY=0.05
+    echo "Unknown model!!"
+    exit 1
 fi
-
 
 # ------------------- Dataset config -------------------
 if [[ $DATASET == "cifar10" ]]; then

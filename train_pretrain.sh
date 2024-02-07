@@ -19,30 +19,6 @@ if [[ $MODEL == *"mae_vit"* ]]; then
     MAX_EPOCH=800
     WP_EPOCH=40
     EVAL_EPOCH=20
-elif [[ $MODEL == *"mae_resnet"* ]]; then
-    COLOR_FORMAT="rgb"
-    MASK_RATIO=0.6
-    # Optimizer config
-    OPTIMIZER="adamw"
-    BASE_LR=0.0001
-    MIN_LR=0
-    WEIGHT_DECAY=0.05
-    # Epoch
-    MAX_EPOCH=100
-    WP_EPOCH=10
-    EVAL_EPOCH=10
-elif [[ $MODEL == *"mae_rtcnet"* ]]; then
-    COLOR_FORMAT="bgr"
-    MASK_RATIO=0.6
-    # Optimizer config
-    OPTIMIZER="adamw"
-    BASE_LR=0.0001
-    MIN_LR=0
-    WEIGHT_DECAY=0.05
-    # Epoch
-    MAX_EPOCH=100
-    WP_EPOCH=10
-    EVAL_EPOCH=10
 else
     echo "Unknown model!!"
     exit 1

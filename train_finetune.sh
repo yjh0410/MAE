@@ -33,22 +33,10 @@ elif [ $MODEL == *"vit"* ]; then
     BASE_LR=0.0005
     LAYER_DECAY=0.65
     DROP_PATH=0.1
-elif [ $MODEL == *"resnet"* ]; then
-    MAX_EPOCH=100
-    WP_EPOCH=5
-    EVAL_EPOCH=5
-    BASE_LR=0.0001
-    LAYER_DECAY=1.0
-    DROP_PATH=0.1
 else
-    MAX_EPOCH=100
-    WP_EPOCH=5
-    EVAL_EPOCH=5
-    BASE_LR=0.0005
-    LAYER_DECAY=0.65
-    DROP_PATH=0.1
+    echo "Unknown model!!"
+    exit 1
 fi
-
 
 # ------------------- Dataset config -------------------
 DATASET="cifar10"
