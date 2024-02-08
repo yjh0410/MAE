@@ -6,25 +6,20 @@ from .custom import CustomDataset
 
 
 def build_dataset(args, transform=None, is_train=False):
+    # ----------------- CIFAR dataset -----------------
     if args.dataset == 'cifar10':
         args.num_classes = 10
-        return CifarDataset(is_train, transform, args.color_format)
+        return CifarDataset(is_train, transform)
+    
+    # ----------------- ImageNet dataset -----------------
     elif args.dataset == 'imagenet_1k':
         args.num_classes = 1000
-        if "rtcnet" in args.model:
-            print("We do not use official pixel statistic for RTCNet.")
-            pixel_statistic = False
-        else:
-            pixel_statistic = True
-        return ImageNet1KDataset(args, is_train, transform, args.color_format, pixel_statistic)
+        return ImageNet1KDataset(args, is_train, transform)
+    
+    # ----------------- Customed dataset -----------------
     elif args.dataset == 'custom':
         assert args.num_classes is not None and isinstance(args.num_classes, int)
-        if "rtcnet" in args.model:
-            print("We do not use official pixel statistic for RTCNet.")
-            pixel_statistic = False
-        else:
-            pixel_statistic = True
-        return CustomDataset(args, is_train, transform, args.color_format, pixel_statistic)
+        return CustomDataset(args, is_train, transform)
     
 
 def build_dataloader(args, dataset, is_train=False):
