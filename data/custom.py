@@ -14,8 +14,8 @@ class CustomDataset(data.Dataset):
         # ----------------- basic parameters -----------------
         self.args = args
         self.is_train  = is_train
-        self.pixel_mean = [0, 0, 0]
-        self.pixel_std =  [1, 1, 1]
+        self.pixel_mean = [0.485, 0.456, 0.406]
+        self.pixel_std = [0.229, 0.224, 0.225]
         print("Pixel mean: {}".format(self.pixel_mean))
         print("Pixel std:  {}".format(self.pixel_std))
         self.image_set = 'train' if is_train else 'val'
@@ -94,7 +94,7 @@ if __name__ == "__main__":
             transforms.RandomResizedCrop(args.img_size, scale=(0.2, 1.0), interpolation=3),  # 3 is bicubic
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0., 0., 0.], std=[1., 1., 1.])])
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
   
     # Dataset
     dataset = CustomDataset(args, is_train=True, transform=train_transform)  
