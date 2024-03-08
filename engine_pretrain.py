@@ -12,7 +12,7 @@ def train_one_epoch(args,
                     data_loader,
                     optimizer,
                     epoch,
-                    lf,
+                    lr_scheduler_warmup,
                     loss_scaler,
                     local_rank,
                     tblogger=None):
@@ -28,10 +28,11 @@ def train_one_epoch(args,
         ni = iter_i + epoch * epoch_size
         nw = args.wp_epoch * epoch_size
         # Warmup
-        if ni <= nw:
-            xi = [0, nw]  # x interp
-            for x in optimizer.param_groups:
-                x['lr'] = np.interp(ni, xi, [0.0, x['initial_lr'] * lf(epoch)])
+        if nw > 0 and ni < nw:
+            lr_scheduler_warmup(ni, optimizer)
+        elif ni == nw:
+            print("Warmup stage is over.")
+            lr_scheduler_warmup.set_lr(optimizer, args.base_lr)
 
         # To device
         images = images.to(device, non_blocking=True)
@@ -52,7 +53,7 @@ def train_one_epoch(args,
         loss /= args.grad_accumulate
         loss_scaler(loss, optimizer, parameters=model.parameters(),
                     update_grad=(iter_i + 1) % args.grad_accumulate == 0)
-        if ni % args.grad_accumulate == 0:
+        if (iter_i + 1) % args.grad_accumulate == 0:
             optimizer.zero_grad()
 
         if torch.cuda.is_available():

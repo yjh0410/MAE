@@ -26,8 +26,9 @@ from models import build_model
 from utils import lr_decay
 from utils import distributed_utils
 from utils.misc import setup_seed, print_rank_0, load_model, save_model
-from utils.com_flops_params import FLOPs_and_Params
 from utils.misc import NativeScalerWithGradNormCount as NativeScaler
+from utils.lr_scheduler import build_lr_scheduler, LinearWarmUpLrScheduler
+from utils.com_flops_params import FLOPs_and_Params
 
 # ---------------- Training engine ----------------
 from engine_finetune import train_one_epoch, evaluate
@@ -252,19 +253,15 @@ def main():
 
 
     # ------------------------- Build Optimzier -------------------------
-    ## learning rate
     args.base_lr = args.base_lr / 256 * args.batch_size * args.grad_accumulate    # auto scale lr
-    args.min_lr  = args.min_lr  / 256 * args.batch_size * args.grad_accumulate    # auto scale lr
-    ## optimizer
     param_groups = lr_decay.param_groups_lrd(model_without_ddp, args.weight_decay, model_without_ddp.no_weight_decay(), args.layer_decay)
     optimizer = torch.optim.AdamW(param_groups, lr=args.base_lr)
-    ## loss scaler
     loss_scaler = NativeScaler()
 
 
     # ------------------------- Build Lr Scheduler -------------------------
-    lf = lambda x: ((1 - math.cos(x * math.pi / args.max_epoch)) / 2) * (args.min_lr / args.base_lr - 1) + 1
-    lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
+    lr_scheduler_warmup = LinearWarmUpLrScheduler(args.base_lr, wp_iter=args.wp_epoch * len(train_dataloader))
+    lr_scheduler = build_lr_scheduler(args, optimizer)
 
 
     # ------------------------- Build Criterion -------------------------
@@ -275,7 +272,8 @@ def main():
         criterion = LabelSmoothingCrossEntropy(smoothing=args.smoothing)
     else:
         criterion = torch.nn.CrossEntropyLoss()
-    load_model(args=args, model_without_ddp=model_without_ddp, optimizer=optimizer, loss_scaler=loss_scaler)
+    load_model(args=args, model_without_ddp=model_without_ddp,
+               optimizer=optimizer, lr_scheduler=lr_scheduler, loss_scaler=loss_scaler)
 
     # ------------------------- Eval before Train Pipeline -------------------------
     if args.eval:
@@ -283,21 +281,23 @@ def main():
         test_stats = evaluate(val_dataloader, model, device, local_rank)
         print('Eval Results: [loss: %.2f][acc1: %.2f][acc5 : %.2f]' %
                 (test_stats['loss'], test_stats['acc1'], test_stats['acc5']), flush=True)
-        exit(0)
+        return
 
     # ------------------------- Training Pipeline -------------------------
     start_time = time.time()
     max_accuracy = -1.0
     print_rank_0("=============== Start training for {} epochs ===============".format(args.max_epoch), local_rank)
     for epoch in range(args.start_epoch, args.max_epoch):
-        # train one epoch
         if args.distributed:
             train_dataloader.batch_sampler.sampler.set_epoch(epoch)
-        train_stats = train_one_epoch(args, device, model, train_dataloader, optimizer, epoch,
-                                      lf, loss_scaler, criterion, local_rank, tblogger, mixup_fn)
+
+        # train one epoch
+        train_one_epoch(args, device, model, train_dataloader, optimizer, epoch,
+                        lr_scheduler_warmup, loss_scaler, criterion, local_rank, tblogger, mixup_fn)
 
         # LR scheduler
-        lr_scheduler.step()
+        if (epoch + 1) > args.wp_epoch:
+            lr_scheduler.step()
 
         # Evaluate
         if (epoch % args.eval_epoch) == 0 or (epoch + 1 == args.max_epoch):
@@ -310,7 +310,7 @@ def main():
             if local_rank <= 0:
                 print('- saving the model after {} epochs ...'.format(epoch))
                 save_model(args=args, model=model, model_without_ddp=model_without_ddp,
-                           optimizer=optimizer, loss_scaler=loss_scaler, epoch=epoch, acc1=max_accuracy)
+                           optimizer=optimizer, lr_scheduler=lr_scheduler, loss_scaler=loss_scaler, epoch=epoch, acc1=max_accuracy)
         if args.distributed:
             dist.barrier()
 

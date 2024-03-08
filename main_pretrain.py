@@ -22,10 +22,12 @@ from models import build_model
 
 # ---------------- Utils compoments ----------------
 from utils import distributed_utils
-from utils.misc import setup_seed, modify_optimizer
+from utils.misc import setup_seed
 from utils.misc import load_model, save_model
 from utils.misc import unpatchify, print_rank_0
 from utils.misc import NativeScalerWithGradNormCount as NativeScaler
+from utils.optimizer import build_optimizer
+from utils.lr_scheduler import build_lr_scheduler, LinearWarmUpLrScheduler
 from utils.com_flops_params import FLOPs_and_Params
 
 # ---------------- Training engine ----------------
@@ -182,7 +184,6 @@ def main():
 
     # ------------------------- Build Dataloader -------------------------
     train_dataloader = build_dataloader(args, train_dataset, is_train=True)
-
     print_rank_0('=================== Dataset Information ===================', local_rank)
     print_rank_0('Train dataset size : {}'.format(len(train_dataset)), local_rank)
 
@@ -209,13 +210,15 @@ def main():
 
 
     # ------------------------- Build Optimzier -------------------------
-    ## learning rate
     args.base_lr = args.base_lr / 256 * args.batch_size * args.grad_accumulate  # auto scale lr
-    args.min_lr  = args.min_lr  / 256 * args.batch_size * args.grad_accumulate  # auto scale lr
+    optimizer = build_optimizer(model_without_ddp, args.base_lr, args.weight_decay)
     print('Base lr: ', args.base_lr)
     print('Mun  lr: ', args.min_lr)
-    ## modified optimizer
-    optimizer = modify_optimizer(model_without_ddp, args.base_lr, args.weight_decay)
+
+
+    # ------------------------- Build Lr Scheduler -------------------------
+    lr_scheduler_warmup = LinearWarmUpLrScheduler(args.base_lr, wp_iter=args.wp_epoch * len(train_dataloader))
+    lr_scheduler = build_lr_scheduler(args, optimizer)
 
 
     # ------------------------- Build Loss scaler -------------------------
@@ -223,35 +226,33 @@ def main():
     load_model(args=args, model_without_ddp=model_without_ddp, optimizer=optimizer, loss_scaler=loss_scaler)
 
 
-    # ------------------------- Build Lr Scheduler -------------------------
-    lf = lambda x: ((1 - math.cos(x * math.pi / args.max_epoch)) / 2) * (args.min_lr / args.base_lr - 1) + 1
-    lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
-
-
     # ------------------------- Eval before Train Pipeline -------------------------
     if args.eval:
         print('visualizing ...')
         visualize(args, device, model_without_ddp)
-        exit(0)
+        return
 
 
     # ------------------------- Training Pipeline -------------------------
     start_time = time.time()
     print_rank_0("=============== Start training for {} epochs ===============".format(args.max_epoch), local_rank)
     for epoch in range(args.start_epoch, args.max_epoch):
-        # Train one epoch
         if args.distributed:
             train_dataloader.batch_sampler.sampler.set_epoch(epoch)
-        train_stats = train_one_epoch(args, device, model, train_dataloader, optimizer, epoch, lf, loss_scaler, local_rank, tblogger)
+        
+        # Train one epoch
+        train_one_epoch(args, device, model, train_dataloader, optimizer, epoch,
+                        lr_scheduler_warmup, loss_scaler, local_rank, tblogger)
 
         # LR scheduler
-        lr_scheduler.step()
+        if (epoch + 1) > args.wp_epoch:
+            lr_scheduler.step()
 
         # Evaluate
         if local_rank <= 0 and (epoch % args.eval_epoch == 0 or epoch + 1 == args.max_epoch):
             print('- saving the model after {} epochs ...'.format(epoch))
             save_model(args=args, model=model, model_without_ddp=model_without_ddp,
-                       optimizer=optimizer, loss_scaler=loss_scaler, epoch=epoch)
+                        optimizer=optimizer, lr_scheduler=lr_scheduler, loss_scaler=loss_scaler, epoch=epoch)
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
