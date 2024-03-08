@@ -91,6 +91,8 @@ def parse_args():
     # Optimizer
     parser.add_argument('-opt', '--optimizer', type=str, default='adamw',
                         help='sgd, adam')
+    parser.add_argument('-lrs', '--lr_scheduler', type=str, default='cosine',
+                        help='step, cosine')
     parser.add_argument('-wd', '--weight_decay', type=float, default=0.05,
                         help='weight decay')
     parser.add_argument('--base_lr', type=float, default=1e-3,
@@ -257,6 +259,8 @@ def main():
     param_groups = lr_decay.param_groups_lrd(model_without_ddp, args.weight_decay, model_without_ddp.no_weight_decay(), args.layer_decay)
     optimizer = torch.optim.AdamW(param_groups, lr=args.base_lr)
     loss_scaler = NativeScaler()
+    print('Base lr: ', args.base_lr)
+    print('Mun  lr: ', args.min_lr)
 
 
     # ------------------------- Build Lr Scheduler -------------------------

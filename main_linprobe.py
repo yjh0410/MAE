@@ -86,6 +86,8 @@ def parse_args():
     parser.add_argument('--drop_path', type=float, default=0.,
                         help='drop_path')
     # Optimizer
+    parser.add_argument('-lrs', '--lr_scheduler', type=str, default='cosine',
+                        help='step, cosine')
     parser.add_argument('-wd', '--weight_decay', type=float, default=0.05,
                         help='weight decay')
     parser.add_argument('--base_lr', type=float, default=0.1,

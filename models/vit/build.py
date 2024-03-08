@@ -22,14 +22,14 @@ def build_vit(args):
         model = vit_huge(args.img_size, args.patch_size, args.img_dim, args.num_classes, args.drop_path, args.learnable_pos)
     
     # load pretrained
-    if args.mae_pretrained is not None:
+    if args.pretrained is not None:
         # check path
-        if not os.path.exists(args.mae_pretrained):
-            print("No mae pretrained model.")
+        if not os.path.exists(args.pretrained):
+            print("No pretrained model.")
             return model
         ## load mae pretrained model
-        print('Loading MAE pretrained from <{}> for <{}> ...'.format('mae_'+args.model, args.model))
-        checkpoint = torch.load(args.mae_pretrained, map_location='cpu')
+        print('Loading pretrained from <{}> for <{}> ...'.format('mae_'+args.model, args.model))
+        checkpoint = torch.load(args.pretrained, map_location='cpu')
         # checkpoint state dict
         checkpoint_state_dict = checkpoint.pop("model")
         # model state dict

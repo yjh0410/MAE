@@ -12,6 +12,7 @@ if [[ $MODEL == *"mae_vit"* ]]; then
     MASK_RATIO=0.75
     # Optimizer config
     OPTIMIZER="adamw"
+    LRSCHEDULER="cosine"
     BASE_LR=0.00015
     MIN_LR=0
     WEIGHT_DECAY=0.05
@@ -64,6 +65,7 @@ if [ $WORLD_SIZE == 1 ]; then
             --wp_epoch ${WP_EPOCH} \
             --eval_epoch ${EVAL_EPOCH} \
             --optimizer ${OPTIMIZER} \
+            --lr_scheduler ${LRSCHEDULER} \
             --base_lr ${BASE_LR} \
             --min_lr ${MIN_LR} \
             --weight_decay ${WEIGHT_DECAY} \
@@ -84,6 +86,7 @@ elif [[ $WORLD_SIZE -gt 1 && $WORLD_SIZE -le 8 ]]; then
             --wp_epoch ${WP_EPOCH} \
             --eval_epoch ${EVAL_EPOCH} \
             --optimizer ${OPTIMIZER} \
+            --lr_scheduler ${LRSCHEDULER} \
             --base_lr ${BASE_LR} \
             --min_lr ${MIN_LR} \
             --weight_decay ${WEIGHT_DECAY} \

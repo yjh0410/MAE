@@ -88,6 +88,8 @@ def parse_args():
     # Optimizer
     parser.add_argument('-opt', '--optimizer', type=str, default='adamw',
                         help='sgd, adam')
+    parser.add_argument('-lrs', '--lr_scheduler', type=str, default='cosine',
+                        help='step, cosine')
     parser.add_argument('-wd', '--weight_decay', type=float, default=0.05,
                         help='weight decay')
     parser.add_argument('--base_lr', type=float, default=1e-3,
@@ -223,7 +225,8 @@ def main():
 
     # ------------------------- Build Loss scaler -------------------------
     loss_scaler = NativeScaler()
-    load_model(args=args, model_without_ddp=model_without_ddp, optimizer=optimizer, loss_scaler=loss_scaler)
+    load_model(args=args, model_without_ddp=model_without_ddp,
+               optimizer=optimizer, lr_scheduler=lr_scheduler, loss_scaler=loss_scaler)
 
 
     # ------------------------- Eval before Train Pipeline -------------------------
