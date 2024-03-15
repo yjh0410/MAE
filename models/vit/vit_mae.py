@@ -226,7 +226,7 @@ class MaeDecoder(nn.Module):
         x_all = torch.cat([x_enc, mask_tokens], dim=1)
         x_all = torch.gather(x_all, dim=1, index=ids_restore.unsqueeze(-1).repeat(1, 1, C))  # unshuffle
 
-        # add pos embed w/ cls token
+        # add pos embed
         x_all = x_all + self.decoder_pos_embed
 
         # apply Transformer blocks
