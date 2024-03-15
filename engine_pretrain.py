@@ -1,6 +1,5 @@
 import sys
 import math
-import numpy as np
 import torch
 
 from utils.misc import MetricLogger, SmoothedValue
@@ -72,7 +71,6 @@ def train_one_epoch(args,
             epoch_1000x = int((iter_i / len(data_loader) + epoch) * 1000)
             tblogger.add_scalar('train_loss', loss_value_reduce, epoch_1000x)
             tblogger.add_scalar('lr', lr, epoch_1000x)
-
 
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()

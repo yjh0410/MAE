@@ -45,8 +45,6 @@ def parse_args():
                         help='patch_size.')    
     parser.add_argument('--mask_ratio', type=float, default=0.75,
                         help='mask ratio.')    
-    parser.add_argument('--color_format', type=str, default='rgb',
-                        help='color format: rgb or bgr')    
     # Basic
     parser.add_argument('--seed', type=int, default=42,
                         help='random seed.')
@@ -79,7 +77,7 @@ def parse_args():
     parser.add_argument('--num_classes', type=int, default=None, 
                         help='number of classes.')
     # Model
-    parser.add_argument('-m', '--model', type=str, default='vit_nano',
+    parser.add_argument('-m', '--model', type=str, default='vit_t',
                         help='model name')
     parser.add_argument('--resume', default=None, type=str,
                         help='keep training')
@@ -190,8 +188,8 @@ def main():
     print_rank_0('Train dataset size : {}'.format(len(train_dataset)), local_rank)
 
 
-    # ------------------------- Build Model -------------------------
-    model = build_model(args, is_train=True)
+   # ------------------------- Build Model -------------------------
+    model = build_model(args, model_type='mae')
     model.train().to(device)
     if local_rank <= 0:
         model_copy = deepcopy(model)
@@ -238,7 +236,7 @@ def main():
 
     # ------------------------- Training Pipeline -------------------------
     start_time = time.time()
-    print_rank_0("=============== Start training for {} epochs ===============".format(args.max_epoch), local_rank)
+    print_rank_0("=================== Start training for {} epochs ===================".format(args.max_epoch), local_rank)
     for epoch in range(args.start_epoch, args.max_epoch):
         if args.distributed:
             train_dataloader.batch_sampler.sampler.set_epoch(epoch)
@@ -255,7 +253,7 @@ def main():
         if local_rank <= 0 and (epoch % args.eval_epoch == 0 or epoch + 1 == args.max_epoch):
             print('- saving the model after {} epochs ...'.format(epoch))
             save_model(args=args, model=model, model_without_ddp=model_without_ddp,
-                        optimizer=optimizer, lr_scheduler=lr_scheduler, loss_scaler=loss_scaler, epoch=epoch)
+                       optimizer=optimizer, lr_scheduler=lr_scheduler, loss_scaler=loss_scaler, epoch=epoch, mae_task=True)
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))

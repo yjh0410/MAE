@@ -42,8 +42,6 @@ def parse_args():
                         help='3 for RGB; 1 for Gray.')    
     parser.add_argument('--patch_size', type=int, default=16,
                         help='patch_size.')    
-    parser.add_argument('--color_format', type=str, default='rgb',
-                        help='color format: rgb or bgr')    
     parser.add_argument('--cuda', action='store_true', default=False,
                         help='use cuda')
     parser.add_argument('--batch_size', type=int, default=256,
@@ -177,7 +175,7 @@ def main():
     print('Val dataset size   : ', len(val_dataset))
 
     # ------------------------- Build Model -------------------------
-    model = build_model(args)
+    model = build_model(args, model_type='cls')
     model.classifier = torch.nn.Sequential(
         nn.BatchNorm1d(model.classifier.in_features, affine=False, eps=1e-6),
         model.classifier)
