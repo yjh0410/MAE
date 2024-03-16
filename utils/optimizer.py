@@ -16,7 +16,7 @@ def build_optimizer(model, base_lr, weight_decay):
                     param_dicts[2].append(p)  # weight decay for all Non-NormLayers' weight
 
     # Build optimizer
-    optimizer = torch.optim.AdamW(param_dicts[0], lr=base_lr, weight_decay=0.0)
+    optimizer = torch.optim.AdamW(param_dicts[0], lr=base_lr, betas=(0.9, 0.95), weight_decay=0.0)
     
     # Add param groups
     optimizer.add_param_group({"params": param_dicts[1], "weight_decay": 0.0})
