@@ -253,6 +253,7 @@ def main():
 
 
     # ------------------------- Build Optimzier -------------------------
+    args.grad_accumulate = max(256 // args.batch_size, args.grad_accumulate)
     args.base_lr = args.base_lr / 256 * args.batch_size * args.grad_accumulate    # auto scale lr
     param_groups = lr_decay.param_groups_lrd(model_without_ddp, args.weight_decay, model_without_ddp.encoder.no_weight_decay(), args.layer_decay)
     optimizer = torch.optim.AdamW(param_groups, lr=args.base_lr)

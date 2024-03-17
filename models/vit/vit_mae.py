@@ -303,6 +303,7 @@ class ViTforMaskedAutoEncoder(nn.Module):
     def forward(self, x):
         imgs = x
         x, mask, ids_restore = self.mae_encoder(x)
+        print(x.shape)
         x = self.mae_decoder(x, ids_restore)
         output = {
             'x_pred': x,

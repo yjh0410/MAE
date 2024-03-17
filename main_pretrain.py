@@ -210,6 +210,7 @@ def main():
 
 
     # ------------------------- Build Optimzier -------------------------
+    args.grad_accumulate = max(256 // args.batch_size, args.grad_accumulate)
     args.base_lr = args.base_lr / 256 * args.batch_size * args.grad_accumulate  # auto scale lr
     optimizer = build_optimizer(model_without_ddp, args.base_lr, args.weight_decay)
     print('Base lr: ', args.base_lr)
