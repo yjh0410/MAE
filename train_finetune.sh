@@ -2,9 +2,10 @@
 MODEL=$1
 BATCH_SIZE=$2
 DATASET=$3
-DATASET_PATH=$4
+DATASET_ROOT=$4
 PRETRAINED_MODEL=$5
-RESUME=$6
+WORLD_SIZE=$6
+RESUME=$7
 
 # ------------------- Training setting -------------------
 OPTIMIZER="adamw"
@@ -61,36 +62,11 @@ fi
 
 
 # ------------------- Training pipeline -------------------
-WORLD_SIZE=1
-if [ $WORLD_SIZE == 1 ]; then
-    python main_finetune.py \
-            --cuda \
-            --root ${ROOT} \
-            --dataset ${DATASET} \
-            --model ${MODEL} \
-            --batch_size ${BATCH_SIZE} \
-            --img_size ${IMG_SIZE} \
-            --patch_size ${PATCH_SIZE} \
-            --drop_path ${DROP_PATH} \
-            --max_epoch ${MAX_EPOCH} \
-            --wp_epoch ${WP_EPOCH} \
-            --eval_epoch ${EVAL_EPOCH} \
-            --optimizer ${OPTIMIZER} \
-            --lr_scheduler ${LRSCHEDULER} \
-            --base_lr ${BASE_LR} \
-            --min_lr ${MIN_LR} \
-            --layer_decay ${LAYER_DECAY} \
-            --weight_decay ${WEIGHT_DECAY} \
-            --reprob 0.25 \
-            --mixup 0.8 \
-            --cutmix 1.0 \
-            --resume ${RESUME} \
-            --pretrained ${PRETRAINED_MODEL}
-elif [[ $WORLD_SIZE -gt 1 && $WORLD_SIZE -le 8 ]]; then
+if (( $WORLD_SIZE >= 1 && $WORLD_SIZE <= 8 )); then
     python -m torch.distributed.run --nproc_per_node=${WORLD_SIZE} --master_port 1668 main_finetune.py \
             --cuda \
-            -dist \
-            --root ${ROOT} \
+            --distributed \
+            --root ${DATASET_ROOT} \
             --dataset ${DATASET} \
             --model ${MODEL} \
             --batch_size ${BATCH_SIZE} \
