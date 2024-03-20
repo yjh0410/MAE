@@ -57,20 +57,16 @@ Masked Image | Original Image | Reconstructed Image
 ### 5.2 Finutune
 - On CIFAR10
 
-|  Model   |  MAE pretrained  | Epoch | Top 1     | Weight |  MAE weight  |
-|  :---:   |       :---:      | :---: | :---:     | :---:  |    :---:     |
-| ViT-Tiny |        No        | 300   | 86.8      | [ckpt](https://github.com/yjh0410/MAE/releases/download/checkpoints/vit-tiny-scratch-299-Acc1-86.79.pth) | - |
-| ViT-Tiny |        Yes       | 100   | **91.8**  | [ckpt](https://github.com/yjh0410/MAE/releases/download/checkpoints/vit-tiny-finetune-99-Acc1-91.78.pth) | [ckpt](https://github.com/yjh0410/MAE/releases/download/checkpoints/vit-tiny-pretrained-799.pth)
+| Method |  Model  | Epoch | Top 1    | Weight |  MAE weight  |
+|  :---: |  :---:  | :---: | :---:    | :---:  |    :---:     |
+|  MAE   |  ViT-T  | 100   |   91.2   | [ckpt](https://github.com/yjh0410/MAE/releases/download/checkpoints/ViT-T_Cifar10.pth) | [ckpt](https://github.com/yjh0410/MAE/releases/download/checkpoints/MAE_ViT-T_Cifar10.pth) |
 
 
 - On ImageNet-1K
 
-|  Model   |  MAE pretrained  | Epoch | Top 1 | Weight |  MAE weight  |
-|  :---:   |       :---:      | :---: | :---: | :---:  |    :---:     |
-| ViT-Tiny |        No        | 300   |       |        | |
-| ViT-Tiny |        Yes       | 100   |       |        | |
-
-Since ImageNet-1K is a sufficiently large-scale dataset, we recommend using the default training hyperparameters of the code to pretrain MAE and finetune ViT from MAE pretraining weight. 
+| Method |  Model  | Epoch | Top 1     | Weight |  MAE weight  |
+|  :---: |  :---:  | :---: | :---:     | :---:  |    :---:     |
+|  MAE   |  ViT-T  | 100   |   |  |  |
 
 
 ## 6. Acknowledgment
