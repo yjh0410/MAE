@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import torch.utils.data as data
 import torchvision.transforms as T
@@ -14,10 +15,11 @@ class CifarDataset(data.Dataset):
         self.image_set = 'train' if is_train else 'val'
         # ----------------- dataset & transforms -----------------
         self.transform = transform if transform is not None else self.build_transform()
+        path = os.path.dirname(os.path.abspath(__file__))
         if is_train:
-            self.dataset = CIFAR10('cifar_data/', train=True, download=True, transform=self.transform)
+            self.dataset = CIFAR10(os.path.join(path, 'cifar_data/'), train=True, download=True, transform=self.transform)
         else:
-            self.dataset = CIFAR10('cifar_data/', train=False, download=True, transform=self.transform)
+            self.dataset = CIFAR10(os.path.join(path, 'cifar_data/'), train=False, download=True, transform=self.transform)
 
     def __len__(self):
         return len(self.dataset)
@@ -49,20 +51,7 @@ class CifarDataset(data.Dataset):
 
 if __name__ == "__main__":
     import cv2
-    import torch
-    import argparse
     
-    parser = argparse.ArgumentParser(description='Cifar-Dataset')
-
-    # opt
-    parser.add_argument('--root', default='/Users/liuhaoran/Desktop/python_work/object-detection/dataset/VOCdevkit/',
-                        help='data root')
-    parser.add_argument('--img_size', default=224, type=int,
-                        help='input image size.')
-    parser.add_argument('--color_format', default='rgb', type=str,
-                        help='input image size.')
-    args = parser.parse_args()
-
     # dataset
     dataset = CifarDataset(is_train=True)  
     print('Dataset size: ', len(dataset))
